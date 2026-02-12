@@ -39,7 +39,7 @@ def GetData(filename="RingkøbingData.csv", start=None, search_folder="Files"):
     for parent in [start] + list(start.parents):
         candidate = parent / search_folder / filename
         if candidate.exists():
-            return pd.read_csv(candidate)  # <-- return DataFrame
+            return pd.read_csv(candidate, on_bad_lines="skip", engine="python")  # <-- return DataFrame
 
     # fallback: deep search
     project_root = start.parents[-1]
