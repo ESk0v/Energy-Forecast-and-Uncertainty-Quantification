@@ -29,4 +29,3 @@ ax.legend()
 
 plt.tight_layout()
 SavePlot(fig,"TempDate.png") 
-plt.show()
