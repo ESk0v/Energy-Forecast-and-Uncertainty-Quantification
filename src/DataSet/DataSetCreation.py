@@ -9,6 +9,7 @@ CSV_FILE_PATH = SCRIPT_DIR / '../../RingkøbingData.csv'
 
 # Number of forecast hours (7 days * 24 hours = 168)
 FORECAST_HOURS = 168
+USE_CYCLICAL_ENCODING = True  # Set to False to use raw day_of_year and hour values
 
 
 def format_json_compact_vectors(dataset):
@@ -236,7 +237,7 @@ def create_dataset(filepath=CSV_FILE_PATH, output_path=None, use_cyclical=True, 
 
 if __name__ == '__main__':
     # For testing: only first row, with cyclical encoding
-    dataset = create_dataset(use_cyclical=False, first_row_only=False)
+    dataset = create_dataset(use_cyclical=USE_CYCLICAL_ENCODING, first_row_only=False)
 
 
 
