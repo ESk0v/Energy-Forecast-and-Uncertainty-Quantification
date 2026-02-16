@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
 
 # Path to dataset relative to this script
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
@@ -166,7 +167,7 @@ def train_model(model, train_loader, val_loader, epochs=50, lr=0.001, device='cp
 
         scheduler.step(val_loss)
 
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 1 == 0:
             print(f"Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.6f}, Val Loss: {val_loss:.6f}")
 
     return train_losses, val_losses
@@ -202,6 +203,147 @@ def evaluate_model(model, test_loader, target_scaler, device='cpu'):
     print(f"  MAPE: {mape:.2f}%")
 
     return predictions, actuals, {'mse': mse, 'rmse': rmse, 'mae': mae, 'mape': mape}
+
+
+def plot_training_curves(train_losses, val_losses, save_path=None):
+    """Plot training and validation loss curves."""
+    plt.figure(figsize=(10, 6))
+    epochs = range(1, len(train_losses) + 1)
+
+    plt.plot(epochs, train_losses, 'b-', label='Training Loss', linewidth=2)
+    plt.plot(epochs, val_losses, 'r-', label='Validation Loss', linewidth=2)
+
+    plt.xlabel('Epoch', fontsize=12)
+    plt.ylabel('Loss (MSE)', fontsize=12)
+    plt.title('Training and Validation Loss', fontsize=14)
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"Training curves saved to {save_path}")
+    plt.show()
+
+
+def plot_predictions_vs_actuals(predictions, actuals, save_path=None):
+    """Plot predicted vs actual values."""
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Scatter plot
+    ax1 = axes[0]
+    ax1.scatter(actuals, predictions, alpha=0.5, s=10)
+
+    # Perfect prediction line
+    min_val = min(min(actuals), min(predictions))
+    max_val = max(max(actuals), max(predictions))
+    ax1.plot([min_val, max_val], [min_val, max_val], 'r--', linewidth=2, label='Perfect Prediction')
+
+    ax1.set_xlabel('Actual Energy Usage (MWh)', fontsize=12)
+    ax1.set_ylabel('Predicted Energy Usage (MWh)', fontsize=12)
+    ax1.set_title('Predicted vs Actual Values', fontsize=14)
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # Time series comparison (first 200 samples)
+    ax2 = axes[1]
+    n_show = min(200, len(predictions))
+    ax2.plot(range(n_show), actuals[:n_show], 'b-', label='Actual', linewidth=1.5, alpha=0.8)
+    ax2.plot(range(n_show), predictions[:n_show], 'r-', label='Predicted', linewidth=1.5, alpha=0.8)
+
+    ax2.set_xlabel('Sample Index', fontsize=12)
+    ax2.set_ylabel('Energy Usage (MWh)', fontsize=12)
+    ax2.set_title(f'Actual vs Predicted (First {n_show} Samples)', fontsize=14)
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"Predictions plot saved to {save_path}")
+    plt.show()
+
+
+def plot_residuals(predictions, actuals, save_path=None):
+    """Plot residual analysis."""
+    residuals = predictions - actuals
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+    # Residuals vs Predicted
+    ax1 = axes[0]
+    ax1.scatter(predictions, residuals, alpha=0.5, s=10)
+    ax1.axhline(y=0, color='r', linestyle='--', linewidth=2)
+    ax1.set_xlabel('Predicted Values', fontsize=12)
+    ax1.set_ylabel('Residuals', fontsize=12)
+    ax1.set_title('Residuals vs Predicted', fontsize=14)
+    ax1.grid(True, alpha=0.3)
+
+    # Residual histogram
+    ax2 = axes[1]
+    ax2.hist(residuals, bins=50, edgecolor='black', alpha=0.7)
+    ax2.axvline(x=0, color='r', linestyle='--', linewidth=2)
+    ax2.set_xlabel('Residual Value', fontsize=12)
+    ax2.set_ylabel('Frequency', fontsize=12)
+    ax2.set_title('Residual Distribution', fontsize=14)
+    ax2.grid(True, alpha=0.3)
+
+    # Q-Q style: sorted residuals
+    ax3 = axes[2]
+    sorted_residuals = np.sort(residuals)
+    theoretical_quantiles = np.linspace(0, 1, len(sorted_residuals))
+    ax3.plot(theoretical_quantiles, sorted_residuals, 'b-', linewidth=1)
+    ax3.axhline(y=0, color='r', linestyle='--', linewidth=2)
+    ax3.set_xlabel('Quantile', fontsize=12)
+    ax3.set_ylabel('Residual Value', fontsize=12)
+    ax3.set_title('Sorted Residuals', fontsize=14)
+    ax3.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"Residuals plot saved to {save_path}")
+    plt.show()
+
+
+def plot_error_distribution(predictions, actuals, save_path=None):
+    """Plot error distribution and percentage errors."""
+    errors = np.abs(predictions - actuals)
+    percentage_errors = np.abs((predictions - actuals) / actuals) * 100
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Absolute error histogram
+    ax1 = axes[0]
+    ax1.hist(errors, bins=50, edgecolor='black', alpha=0.7, color='steelblue')
+    ax1.axvline(x=np.mean(errors), color='r', linestyle='--', linewidth=2, label=f'Mean: {np.mean(errors):.2f}')
+    ax1.axvline(x=np.median(errors), color='g', linestyle='--', linewidth=2, label=f'Median: {np.median(errors):.2f}')
+    ax1.set_xlabel('Absolute Error (MWh)', fontsize=12)
+    ax1.set_ylabel('Frequency', fontsize=12)
+    ax1.set_title('Absolute Error Distribution', fontsize=14)
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # Percentage error histogram
+    ax2 = axes[1]
+    # Clip extreme percentage errors for better visualization
+    clipped_pct_errors = np.clip(percentage_errors, 0, 50)
+    ax2.hist(clipped_pct_errors, bins=50, edgecolor='black', alpha=0.7, color='coral')
+    ax2.axvline(x=np.mean(percentage_errors), color='r', linestyle='--', linewidth=2, label=f'Mean: {np.mean(percentage_errors):.1f}%')
+    ax2.axvline(x=np.median(percentage_errors), color='g', linestyle='--', linewidth=2, label=f'Median: {np.median(percentage_errors):.1f}%')
+    ax2.set_xlabel('Percentage Error (%)', fontsize=12)
+    ax2.set_ylabel('Frequency', fontsize=12)
+    ax2.set_title('Percentage Error Distribution (clipped at 50%)', fontsize=14)
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"Error distribution plot saved to {save_path}")
+    plt.show()
 
 
 def main():
@@ -262,6 +404,16 @@ def main():
 
     # Evaluate on test set
     predictions, actuals, metrics = evaluate_model(model, test_loader, target_scaler, device)
+
+    # Create plots directory
+    plots_dir = SCRIPT_DIR / 'plots'
+    plots_dir.mkdir(exist_ok=True)
+
+    # Plot evaluation results
+    plot_training_curves(train_losses, val_losses, save_path=plots_dir / 'training_curves.png')
+    plot_predictions_vs_actuals(predictions, actuals, save_path=plots_dir / 'predictions_vs_actuals.png')
+    plot_residuals(predictions, actuals, save_path=plots_dir / 'residuals.png')
+    plot_error_distribution(predictions, actuals, save_path=plots_dir / 'error_distribution.png')
 
     # Save model
     model_path = SCRIPT_DIR / 'lstm_model.pth'
