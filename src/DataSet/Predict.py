@@ -15,7 +15,19 @@ DATASET_PATH = SCRIPT_DIR / 'dataset.json'
 
 def load_model():
     """Load the trained LSTM model."""
-    checkpoint = torch.load(MODEL_PATH, map_location='cpu')
+    # Newer PyTorch versions restrict which globals can be unpickled by
+    # default. The saved checkpoint contains sklearn's StandardScaler which
+    # needs to be allowlisted for safe unpickling. We try to use the
+    # safe_globals context manager and fall back to a direct load if that
+    # fails.
+    try:
+        import sklearn.preprocessing._data as skdata
+        with torch.serialization.safe_globals([skdata.StandardScaler]):
+            checkpoint = torch.load(MODEL_PATH, map_location='cpu', weights_only=False)
+    except Exception:
+        # Fallback: try loading without the safe_globals wrapper. This may
+        # be less secure, but will work for trusted local checkpoints.
+        checkpoint = torch.load(MODEL_PATH, map_location='cpu', weights_only=False)
 
     input_size = checkpoint['input_size']
     model = LSTMModel(input_size=input_size, hidden_size=64, num_layers=2, dropout=0.2)

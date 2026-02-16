@@ -5,7 +5,43 @@ import pandas as pd
 
 # Path to CSV file relative to this script
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
-CSV_FILE_PATH = SCRIPT_DIR / '../../RingkøbingData.csv'
+
+
+def find_csv_filename(filename='RingkøbingData.csv'):
+    """
+    Search for the CSV file in a set of likely repository locations and return
+    the first existing absolute path. If not found, raise FileNotFoundError
+    listing the attempted locations.
+
+    Candidate locations (checked in order):
+      - repository root (../.. from this script)
+      - repository `Files/` folder
+      - `Plotting/Files/` folder (where the project currently keeps the CSV)
+      - the script directory itself
+    """
+    repo_root = SCRIPT_DIR.parents[1]
+    candidates = [
+        repo_root / filename,
+        repo_root / 'Files' / filename,
+        repo_root / 'Plotting' / 'Files' / filename,
+        SCRIPT_DIR / filename,
+        SCRIPT_DIR.parent / filename,
+    ]
+
+    for p in candidates:
+        if p.exists():
+            return p.resolve()
+
+    # If none found, raise with helpful message listing attempted paths
+    tried = '\n'.join([str(p) for p in candidates])
+    raise FileNotFoundError(
+        f"Could not find '{filename}'. Tried the following locations:\n{tried}\n"
+    )
+
+
+# Default CSV_FILE_PATH is resolved at load time via find_csv_filename when
+# the caller doesn't supply an explicit path.
+CSV_FILE_PATH = None
 
 # Number of forecast hours (7 days * 24 hours = 168)
 FORECAST_HOURS = 168
@@ -45,8 +81,15 @@ def format_json_compact_vectors(dataset):
     return '\n'.join(lines)
 
 
-def load_csv(filepath=CSV_FILE_PATH):
-    """Load the CSV file with proper encoding and delimiter."""
+def load_csv(filepath=None):
+    """Load the CSV file with proper encoding and delimiter.
+
+    If `filepath` is None, try to locate `RingkøbingData.csv` in likely
+    repository locations using `find_csv_filename()`.
+    """
+    if filepath is None:
+        filepath = find_csv_filename('RingkøbingData.csv')
+
     filepath = pathlib.Path(filepath).resolve()
 
     # Use comma as delimiter, parse dateTime as datetime
@@ -158,7 +201,7 @@ def create_forecast_vectors(row, use_cyclical=True):
     return vectors
 
 
-def create_dataset(filepath=CSV_FILE_PATH, output_path=None, use_cyclical=True, first_row_only=True):
+def create_dataset(filepath=None, output_path=None, use_cyclical=True, first_row_only=True):
     """
     Extract data from CSV and create feature vectors for each forecast hour.
 
@@ -171,7 +214,7 @@ def create_dataset(filepath=CSV_FILE_PATH, output_path=None, use_cyclical=True, 
     Returns:
         Dictionary with forecast vectors and metadata, saved as JSON.
     """
-    # Load data
+    # Load data (locate CSV if filepath not provided)
     df = load_csv(filepath).copy()
 
     # For testing, only use the first row
