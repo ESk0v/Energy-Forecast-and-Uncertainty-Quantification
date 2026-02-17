@@ -5,7 +5,7 @@ import torch
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
-from LSTM import LSTMModel
+from MachineLearningModel.LSTM import LSTMModel
 
 # Paths relative to this script
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
