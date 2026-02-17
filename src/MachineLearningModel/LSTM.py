@@ -7,11 +7,12 @@ from sklearn.model_selection import train_test_split
 from LSTMModel import LSTMModel
 from Data      import ForecastDataset, load_dataset, normalize_data
 from Training  import train_model, evaluate_model
-from Plotting  import (
-    plot_training_curves,
-    plot_predictions_vs_actuals,
-    plot_residuals,
-    plot_error_distribution,
+
+from EvaluateModel import (
+    PredictionsVsActualsPlot,
+    ResidualsPlot,
+    TrainingValidationPlot,
+    FirstWeekPredictionPlot,
 )
 
 # =============================================================================
@@ -33,8 +34,8 @@ TEST_SIZE    = 0.30   # fraction held out from full dataset (val + test)
 VAL_SPLIT    = 0.50   # fraction of the above that becomes val (rest is test)
                       # result: 70% train | 15% val | 15% test
 # --- Training ---
-BATCH_SIZE   = 8
-EPOCHS       = 50000
+BATCH_SIZE   = 512
+EPOCHS       = 5
 LEARNING_RATE = 0.002
 
 # --- Model ---
@@ -60,7 +61,7 @@ def main():
     print(f"Using device: {device}")
 
     # --- Load data ---
-    samples, targets, metadata = load_dataset(DATASET_PATH)
+    samples, targets, metadata = load_dataset(DATASET_PATH, True)
 
     # --- Split: train / val / test ---
     X_train, X_temp, y_train, y_temp = train_test_split(
@@ -119,10 +120,11 @@ def main():
 
     save = lambda filename: plots_dir / filename if SAVE_PLOTS else None
 
-    plot_training_curves(train_losses, val_losses,              save_path=save('training_curves.png'), show_plots=SHOW_PLOTS)
-    plot_predictions_vs_actuals(predictions, actuals,           save_path=save('predictions_vs_actuals.png'), show_plots=SHOW_PLOTS)
-    plot_residuals(predictions, actuals,                        save_path=save('residuals.png'), show_plots=SHOW_PLOTS)
-    plot_error_distribution(predictions, actuals,               save_path=save('error_distribution.png'), show_plots=SHOW_PLOTS)
+    print("\nGenerating plots...")
+    #ResidualsPlot(                                      save_path=save('Residuals(1H,1D,1W).png'), show_plots=SHOW_PLOTS)
+    #PredictionsVsActualsPlot(                           save_path=save('PredictionsVsActuals(1H,1D,1W).png'), show_plots=SHOW_PLOTS)
+    #TrainingValidationPlot(train_losses, val_losses,    save_path=save('TrainingValidationCurves.png'), show_plots=SHOW_PLOTS)
+    FirstWeekPredictionPlot(                            save_path=save('FirstWeekPrediction.png'), show_plots=SHOW_PLOTS)
 
     # --- Save model ---
     if SAVE_MODEL:
