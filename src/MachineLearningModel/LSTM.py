@@ -25,7 +25,7 @@ MODEL_PATH   = SCRIPT_DIR / 'Files' / 'LSTMModels' / 'lstm_model.pth'
 PLOTS_DIR    = SCRIPT_DIR / 'Files' / 'TrainingPlots'
 
 # --- Reproducibility ---
-RANDOM_SEED  = 42
+RANDOM_SEED  = 618
 
 # --- Data ---
 NORMALIZE    = True
@@ -33,9 +33,9 @@ TEST_SIZE    = 0.30   # fraction held out from full dataset (val + test)
 VAL_SPLIT    = 0.50   # fraction of the above that becomes val (rest is test)
                       # result: 70% train | 15% val | 15% test
 # --- Training ---
-BATCH_SIZE   = 32
-EPOCHS       = 50
-LEARNING_RATE = 0.001
+BATCH_SIZE   = 800
+EPOCHS       = 50000
+LEARNING_RATE = 0.002
 
 # --- Model ---
 HIDDEN_SIZE  = 64
