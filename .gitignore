@@ -1,1 +1,8 @@
 /RingkøbingData.csv
+/src/DataSet/dataset.json
+/Files/RingkøbingData.csv
+/Plotting/Files/RingkøbingData.csv
+
+#LSTM Files ignored
+/src/Files/dataset.json
+/src/Files/LSTMModels/lstm_model.pth
