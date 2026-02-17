@@ -33,7 +33,7 @@ TEST_SIZE    = 0.30   # fraction held out from full dataset (val + test)
 VAL_SPLIT    = 0.50   # fraction of the above that becomes val (rest is test)
                       # result: 70% train | 15% val | 15% test
 # --- Training ---
-BATCH_SIZE   = 800
+BATCH_SIZE   = 8
 EPOCHS       = 50000
 LEARNING_RATE = 0.002
 

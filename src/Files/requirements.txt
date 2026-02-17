@@ -1,0 +1,7 @@
+# Auto-generated requirements for this project (from import scan)
+# Installed with: pip install -r src/Files/requirements.txt
+numpy
+pandas
+matplotlib
+scikit-learn
+torch
