@@ -27,7 +27,7 @@ MODEL_PATH   = SCRIPT_DIR / 'Files' / 'LSTMModels' / 'lstm_model.pth'
 PLOTS_DIR    = SCRIPT_DIR / 'Files' / 'TrainingPlots'
 
 # --- Reproducibility ---
-RANDOM_SEED  = 618
+RANDOM_SEED  = 6180
 
 # --- Data ---
 NORMALIZE    = True
@@ -35,12 +35,12 @@ TEST_SIZE    = 0.30   # fraction held out from full dataset (val + test)
 VAL_SPLIT    = 0.50   # fraction of the above that becomes val (rest is test)
                       # result: 70% train | 15% val | 15% test
 # --- Training ---
-BATCH_SIZE   = 8
+BATCH_SIZE   = 32
 EPOCHS       = 50000
 LEARNING_RATE = 0.003
 
 # --- Model ---
-HIDDEN_SIZE  = 256
+HIDDEN_SIZE  = 128
 NUM_LAYERS   = 4
 DROPOUT      = 0.3
 
@@ -121,6 +121,18 @@ def main():
 
     save = lambda filename: plots_dir / filename if SAVE_PLOTS else None
 
+    if SAVE_MODEL:
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'feature_scaler': feature_scaler,
+            'target_scaler': target_scaler,
+            'metrics': metrics,
+            'input_size': input_size,
+            'hidden_size': model.hidden_size,
+            'num_layers': model.num_layers,
+            }, MODEL_PATH)
+        print(f"\nModel saved to {MODEL_PATH}")
+
     print("\nGenerating plots...")
     ResidualsPlot(                                      save_path=save('Residuals(1H,1D,1W).png'), show_plots=SHOW_PLOTS)
     PredictionsVsActualsPlot(                           save_path=save('PredictionsVsActuals(1H,1D,1W).png'), show_plots=SHOW_PLOTS)
@@ -128,16 +140,6 @@ def main():
     FirstWeekPredictionPlot(                            save_path=save('FirstWeekPrediction.png'), show_plots=SHOW_PLOTS)
     FirstWeekPredictionMCPlot(                          save_path=save('FirstWeekPredictionMC.png'), show_plots=SHOW_PLOTS)
     # --- Save model ---
-    if SAVE_MODEL:
-        torch.save({
-            'model_state_dict' : model.state_dict(),
-            'feature_scaler'   : feature_scaler,
-            'target_scaler'    : target_scaler,
-            'metrics'          : metrics,
-            'input_size'       : input_size,
-        }, MODEL_PATH)
-        print(f"\nModel saved to {MODEL_PATH}")
-
 
 if __name__ == '__main__':
     main()

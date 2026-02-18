@@ -298,30 +298,35 @@ def FirstWeekPredictionMCPlot(save_path=None, show_plots=True, mc_passes=50):
         plt.close(fig)
 
 def _LoadModel(verbose=True):
-    """Load the trained LSTM model."""
-    # Newer PyTorch versions restrict which globals can be unpickled by
-    # default. The saved checkpoint contains sklearn's StandardScaler which
-    # needs to be allowlisted for safe unpickling. We try to use the
-    # safe_globals context manager and fall back to a direct load if that
-    # fails.
+
     try:
         with torch.serialization.safe_globals([skdata.StandardScaler]):
             checkpoint = torch.load(MODEL_PATH, map_location='cpu', weights_only=False)
     except Exception:
-        # Fallback: try loading without the safe_globals wrapper. This may
-        # be less secure, but will work for trusted local checkpoints.
         checkpoint = torch.load(MODEL_PATH, map_location='cpu', weights_only=False)
 
-    input_size = checkpoint['input_size']
-    model = LSTMModel(input_size=input_size, hidden_size=64, num_layers=2, dropout=0.2)
+    input_size  = checkpoint['input_size']
+    hidden_size = checkpoint['hidden_size']
+    num_layers  = checkpoint['num_layers']
+
+    model = LSTMModel(
+        input_size=input_size,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        dropout=0.2
+    )
+
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
 
     feature_scaler = checkpoint['feature_scaler']
-    target_scaler = checkpoint['target_scaler']
+    target_scaler  = checkpoint['target_scaler']
+
     if verbose:
         print(f"Model loaded from {MODEL_PATH}")
         print(f"Input size: {input_size}")
+        print(f"Hidden size: {hidden_size}")
+        print(f"Num layers: {num_layers}")
 
     return model, feature_scaler, target_scaler
 
