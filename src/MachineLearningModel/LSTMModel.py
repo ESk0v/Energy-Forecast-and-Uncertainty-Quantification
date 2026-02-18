@@ -16,11 +16,16 @@ class LSTMModel(nn.Module):
             dropout=dropout if num_layers > 1 else 0
         )
 
+        self.norm = nn.LayerNorm(hidden_size)
+        
         self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 32),
+            nn.Linear(hidden_size, 128),
             nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(32, 1)
+            nn.Dropout(0.3),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(64, 1)
         )
 
     def forward(self, x):
@@ -29,6 +34,8 @@ class LSTMModel(nn.Module):
 
         # Use the last hidden state
         last_hidden = lstm_out[:, -1, :]
+
+        last_hidden = self.norm(last_hidden)
 
         # Pass through fully connected layers
         output = self.fc(last_hidden)

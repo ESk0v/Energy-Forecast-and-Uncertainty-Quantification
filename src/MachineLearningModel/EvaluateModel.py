@@ -171,10 +171,6 @@ def TrainingValidationPlot(train_losses, val_losses, save_path=None, show_plots=
 
 def FirstWeekPredictionPlot(save_path=None, show_plots=True):
 
-    import numpy as np
-    import torch
-    import matplotlib.pyplot as plt
-
     # --- Load ---
     model, feature_scaler, target_scaler = _LoadModel()
     model.eval()
@@ -215,6 +211,79 @@ def FirstWeekPredictionPlot(save_path=None, show_plots=True):
     ax.set_xlabel('Hour')
     ax.set_ylabel('Energy Usage (MWh)')
     ax.set_title('First 168 Hour Forecast')
+    ax.legend()
+    ax.grid(alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+
+    if show_plots:
+        plt.show()
+    else:
+        plt.close(fig)
+
+def FirstWeekPredictionMCPlot(save_path=None, show_plots=True, mc_passes=50):
+    """
+    Predict the first 168-hour forecast with Monte Carlo Dropout uncertainty.
+    
+    Args:
+        save_path: Path to save the plot (optional)
+        show_plots: Whether to show the plot
+        mc_passes: Number of stochastic forward passes for MC Dropout
+    """
+
+    # --- Load ---
+    model, feature_scaler, target_scaler = _LoadModel()
+    model.train()  # <-- keep dropout active for MC Dropout
+
+    samples, targets, _ = load_dataset(DATASET_PATH, False)
+
+    predictions_mean = []
+    predictions_std = []
+    actual_week = []
+
+    # Build first 168-hour forecast sequentially
+    for i in range(168):
+        sample_i = samples[i]      # (168, 9)
+        target_i = targets[i]      # scalar
+
+        # Scale features
+        sample_scaled = feature_scaler.transform(sample_i)
+        sample_tensor = torch.tensor(sample_scaled, dtype=torch.float32).unsqueeze(0)
+
+        # --- Monte Carlo predictions ---
+        mc_preds = []
+        for _ in range(mc_passes):
+            with torch.no_grad():
+                pred_scaled = model(sample_tensor).squeeze().item()
+            pred = target_scaler.inverse_transform([[pred_scaled]])[0, 0]
+            mc_preds.append(pred)
+
+        mc_preds = np.array(mc_preds)
+        predictions_mean.append(mc_preds.mean())
+        predictions_std.append(mc_preds.std())
+        actual_week.append(target_i)
+
+    predictions_mean = np.array(predictions_mean)
+    predictions_std = np.array(predictions_std)
+    actual_week = np.array(actual_week)
+    hours = np.arange(168)
+
+    # --- Plot ---
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.plot(hours, actual_week, label='Actual', linewidth=1.5, alpha=0.9)
+    ax.plot(hours, predictions_mean, label='Predicted', linewidth=1.5, alpha=0.9)
+    ax.fill_between(hours,
+                    predictions_mean - 2 * predictions_std,
+                    predictions_mean + 2 * predictions_std,
+                    color='orange', alpha=0.3, label='Confidence Interval (2σ)')
+
+    ax.set_xlabel('Hour')
+    ax.set_ylabel('Energy Usage (MWh)')
+    ax.set_title('First 168 Hour Forecast with MC Dropout Uncertainty')
     ax.legend()
     ax.grid(alpha=0.3)
 

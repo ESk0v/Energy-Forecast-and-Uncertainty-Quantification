@@ -13,6 +13,7 @@ from EvaluateModel import (
     ResidualsPlot,
     TrainingValidationPlot,
     FirstWeekPredictionPlot,
+    FirstWeekPredictionMCPlot
 )
 
 # =============================================================================
@@ -39,9 +40,9 @@ EPOCHS       = 50000
 LEARNING_RATE = 0.003
 
 # --- Model ---
-HIDDEN_SIZE  = 64
-NUM_LAYERS   = 2
-DROPOUT      = 0.2
+HIDDEN_SIZE  = 256
+NUM_LAYERS   = 4
+DROPOUT      = 0.3
 
 # --- Output toggles ---
 SAVE_MODEL   = True
@@ -125,7 +126,7 @@ def main():
     PredictionsVsActualsPlot(                           save_path=save('PredictionsVsActuals(1H,1D,1W).png'), show_plots=SHOW_PLOTS)
     TrainingValidationPlot(train_losses, val_losses,    save_path=save('TrainingValidationCurves.png'), show_plots=SHOW_PLOTS)
     FirstWeekPredictionPlot(                            save_path=save('FirstWeekPrediction.png'), show_plots=SHOW_PLOTS)
-
+    FirstWeekPredictionMCPlot(                          save_path=save('FirstWeekPredictionMC.png'), show_plots=SHOW_PLOTS)
     # --- Save model ---
     if SAVE_MODEL:
         torch.save({
