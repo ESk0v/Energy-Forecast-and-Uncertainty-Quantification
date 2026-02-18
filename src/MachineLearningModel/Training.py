@@ -36,7 +36,7 @@ def train_model(model, train_loader, val_loader, epochs, lr, device):
               f"Train Loss: {train_loss:.6f}  "
               f"Val Loss: {val_loss:.6f}")
 
-        stop, early_state = _early_stopping(val_loss, model, early_state, patience=5, min_delta=1e-5)
+        stop, early_state = _early_stopping(val_loss, model, early_state, patience=50, min_delta=1e-5)
         if stop:
             print("Early stopping triggered.")
             model.load_state_dict(early_state["best_weights"])
