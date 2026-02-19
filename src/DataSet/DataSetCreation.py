@@ -217,6 +217,26 @@ def create_dataset(filepath=None, output_path=None, use_cyclical=True, first_row
     # Load data (locate CSV if filepath not provided)
     df = load_csv(filepath).copy()
 
+    # Ensure proper ordering
+    df = df.sort_values("dateTime")
+
+    # Set time index
+    df = df.set_index("dateTime")
+
+    # Interpolate ONLY the energy column
+    df["abvaerk"] = df["abvaerk"].interpolate(method="time")
+
+    # If needed (edge NaNs)
+    df["abvaerk"] = df["abvaerk"].interpolate(
+        method="time",
+        limit_direction="both"
+    )
+
+    print("Missing values in abvaerk:", df["abvaerk"].isna().sum())
+    
+    # Reset index back
+    df = df.reset_index()
+
     # For testing, only use the first row
     if first_row_only:
         df = df.head(1)
