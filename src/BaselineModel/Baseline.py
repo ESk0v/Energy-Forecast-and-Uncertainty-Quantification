@@ -7,10 +7,14 @@ import numpy as np
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(SCRIPT_DIR.parent / 'MachineLearningModel'))
 
-from EvaluateModel import ResidualsPlot, PredictionsVsActualsPlot, FirstWeekPredictionPlot
+from EvaluateModel import (
+    ResidualsPlot,
+    PredictionsVsActualsPlot,
+    FirstWeekPredictionPlot
+)
 
 # Paths
-DATASET_PATH = SCRIPT_DIR.parent / 'DataSet' / 'dataset.json'
+DATASET_PATH = SCRIPT_DIR.parent / 'Files' / 'dataset.json'
 PLOTS_DIR    = SCRIPT_DIR.parent / 'Files' / 'BaselinePlots'
 
 # --- Output toggles ---

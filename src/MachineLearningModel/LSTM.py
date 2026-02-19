@@ -37,7 +37,7 @@ VAL_SPLIT    = 0.50   # fraction of the above that becomes val (rest is test)
 # --- Training ---
 BATCH_SIZE   = 32
 EPOCHS       = 50000
-LEARNING_RATE = 0.002
+LEARNING_RATE = 0.112202
 
 # --- Model ---
 HIDDEN_SIZE  = 64

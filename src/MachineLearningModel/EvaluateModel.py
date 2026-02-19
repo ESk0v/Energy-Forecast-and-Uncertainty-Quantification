@@ -12,7 +12,7 @@ from Data import load_dataset
 
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent.parent
 MODEL_PATH = SCRIPT_DIR / 'Files' / 'LSTMModels' / 'lstm_model.pth'
-DATASET_PATH = SCRIPT_DIR / 'Dataset' / 'dataset.json'
+DATASET_PATH = SCRIPT_DIR / 'Files' / 'dataset.json'
 
 # =============================================================================
 # Main plotting functions
