@@ -12,128 +12,112 @@ from Data import load_dataset
 
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent.parent
 MODEL_PATH = SCRIPT_DIR / 'Files' / 'LSTMModels' / 'lstm_model.pth'
-DATASET_PATH = SCRIPT_DIR / 'Files' / 'dataset.json'
+DATASET_PATH = SCRIPT_DIR / 'Dataset' / 'dataset.json'
 
-def ResidualsPlot(save_path=None, show_plots=True):
+# =============================================================================
+# Main plotting functions
+# =============================================================================
 
-    def PlotAllHorizonsResiduals(preds_list, acts_list, horizons, save_path=None, show_plots=True):
-        
-        def compute_mape(actuals, predictions):
-            return np.mean(np.abs((actuals - predictions) / actuals)) * 100
-    
-        n_horizons = len(horizons)
-        fig, axes = plt.subplots(1, n_horizons, figsize=(6 * n_horizons, 4), sharey=True)
+def ResidualsPlot(model_name='LSTM', save_path=None, show_plots=True):
+    """
+    Load model, evaluate at all horizons, and plot residuals.
 
-        if n_horizons == 1:
-            axes = [axes]
+    Args:
+        model_name: 'LSTM' or 'Baseline'
+        save_path: Path to save the plot
+        show_plots: Whether to display the plot
+    """
+    preds_list, acts_list = _GetPredictionsAndActuals(model_name)
+    horizons = ['1h', '24h', '168h']
 
-        colors = ['blue', 'green', 'red']  # match Predicted vs Actual
+    n_horizons = len(horizons)
+    fig, axes = plt.subplots(1, n_horizons, figsize=(6 * n_horizons, 4), sharey=True)
 
-        for i, horizon in enumerate(horizons):
-            predictions = preds_list[i]
-            actuals = acts_list[i]
-            residuals = predictions - actuals
-            mape = compute_mape(actuals, predictions)
+    if n_horizons == 1:
+        axes = [axes]
 
-            ax = axes[i]
-            # --- Scatter plot for residuals ---
-            ax.scatter(np.arange(len(residuals)), residuals, s=4, alpha=0.2, color=colors[i])
-            ax.axhline(0, color='k', linestyle='--', linewidth=0.8)  # zero line
-            ax.set_title(f'{horizon} Horizon Residuals', fontsize=14)
-            ax.set_xlabel('Sample Index', fontsize=12)
-            if i == 0:
-                ax.set_ylabel('Residual (MWh)', fontsize=12)
-            ax.legend([f"Residuals\nMAPE: {mape:.2f}%"], fontsize=10)
-            ax.grid(True, alpha=0.3)
+    colors = ['blue', 'green', 'red']  # match Predicted vs Actual
 
-        plt.tight_layout()
+    for i, horizon in enumerate(horizons):
+        predictions = preds_list[i]
+        actuals = acts_list[i]
+        residuals = predictions - actuals
+        mape = _compute_mape(actuals, predictions)
 
-        if save_path:
-            plt.savefig(save_path, dpi=300)
-            print(f"Residuals over time plot saved to {save_path}")
-        if show_plots:
-            plt.show()
-        else:
-            plt.close(fig)
+        ax = axes[i]
+        # --- Scatter plot for residuals ---
+        ax.scatter(np.arange(len(residuals)), residuals, s=4, alpha=0.2, color=colors[i])
+        ax.axhline(0, color='k', linestyle='--', linewidth=0.8)  # zero line
+        ax.set_title(f'{model_name} - {horizon} Horizon Residuals', fontsize=14)
+        ax.set_xlabel('Sample Index', fontsize=12)
+        if i == 0:
+            ax.set_ylabel('Residual (MWh)', fontsize=12)
+        ax.legend([f"Residuals\nMAPE: {mape:.2f}%"], fontsize=10)
+        ax.grid(True, alpha=0.3)
 
-    # --- Load model + scalers ---
-    model, feature_scaler, target_scaler = _LoadModel(False)
+    plt.tight_layout()
 
-    # --- Load dataset ---
-    samples, targets, _ = load_dataset(DATASET_PATH, False)
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"Residuals over time plot saved to {save_path}")
+    if show_plots:
+        plt.show()
+    else:
+        plt.close(fig)
 
-    # --- Evaluate horizons ---
-    pred_1h, act_1h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=0)
-    pred_24h, act_24h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=23)
-    pred_168h, act_168h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=167)
+def PredictionsVsActualsPlot(model_name='LSTM', save_path=None, show_plots=True):
+    """
+    Load model, evaluate at all horizons, and plot predictions vs actuals.
 
-    # --- Plot residuals ---
-    PlotAllHorizonsResiduals(
-        preds_list=[pred_1h, pred_24h, pred_168h],
-        acts_list=[act_1h, act_24h, act_168h],
-        horizons=['1h', '24h', '168h'],
-        save_path=save_path,
-        show_plots=show_plots
-    )
+    Args:
+        model_name: 'LSTM' or 'Baseline'
+        save_path: Path to save the plot
+        show_plots: Whether to display the plot
+    """
+    preds_list, acts_list = _GetPredictionsAndActuals(model_name)
+    horizons = ['1h', '24h', '168h']
 
-def PredictionsVsActualsPlot(save_path=None, show_plots=True):
+    colors = ['blue', 'green', 'red']
+    fig, axes = plt.subplots(2, 3, figsize=(20, 10))
 
-    def PlotAllHorizons(preds_list, acts_list, horizons, save_path=True, show_plots=True):
+    fig.suptitle(f'{model_name} Model Evaluation', fontsize=16, fontweight='bold')
 
-        def compute_mape(actuals, predictions):
-            return np.mean(np.abs((actuals - predictions) / actuals)) * 100
+    for i, horizon in enumerate(horizons):
+        actuals = acts_list[i]
+        predictions = preds_list[i]
+        mape = _compute_mape(actuals, predictions)
 
-        colors = ['blue', 'green', 'red']
-        fig, axes = plt.subplots(2, 3, figsize=(20, 10))
+        # --- Scatter plot ---
+        ax1 = axes[0, i]
+        ax1.scatter(actuals, predictions, alpha=0.5, s=10, color=colors[i])
+        min_val = min(actuals.min(), predictions.min())
+        max_val = max(actuals.max(), predictions.max())
+        ax1.plot([min_val, max_val], [min_val, max_val], 'k--', linewidth=2, label='Perfect Prediction')  # black dashed line
+        ax1.set_xlabel('Actual Energy Usage (MWh)', fontsize=12)
+        ax1.set_ylabel('Predicted Energy Usage (MWh)', fontsize=12)
+        ax1.set_title(f'{horizon} Horizon: Predicted vs Actual', fontsize=14)
+        ax1.legend(title=f"MAPE: {mape:.2f}%", fontsize=10)
+        ax1.grid(True, alpha=0.3)
 
-        for i, horizon in enumerate(horizons):
-            actuals = acts_list[i]
-            predictions = preds_list[i]
-            mape = compute_mape(actuals, predictions)
+        # --- Line plot (full series) ---
+        ax2 = axes[1, i]
+        ax2.plot(actuals, 'b-', label='Actual', linewidth=0.09, alpha=0.9)          # thinner + more transparent
+        ax2.plot(predictions, 'r-', label='Predicted', linewidth=0.09, alpha=1)     # thinner + more transparent
+        ax2.set_xlabel('Sample Index', fontsize=12)
+        ax2.set_ylabel('Energy Usage (MWh)', fontsize=12)
+        ax2.set_title(f'{horizon} Horizon: Full Series', fontsize=14)
+        ax2.legend(title=f"MAPE: {mape:.2f}%", fontsize=10)
+        ax2.grid(True, alpha=0.3)
 
-            # --- Scatter plot ---
-            ax1 = axes[0, i]
-            ax1.scatter(actuals, predictions, alpha=0.5, s=10, color=colors[i])
-            min_val = min(actuals.min(), predictions.min())
-            max_val = max(actuals.max(), predictions.max())
-            ax1.plot([min_val, max_val], [min_val, max_val], 'k--', linewidth=2, label='Perfect Prediction')  # black dashed line
-            ax1.set_xlabel('Actual Energy Usage (MWh)', fontsize=12)
-            ax1.set_ylabel('Predicted Energy Usage (MWh)', fontsize=12)
-            ax1.set_title(f'{horizon} Horizon: Predicted vs Actual', fontsize=14)
-            ax1.legend(title=f"MAPE: {mape:.2f}%", fontsize=10)
-            ax1.grid(True, alpha=0.3)
+    plt.tight_layout()
 
-            # --- Line plot (full series) ---
-            ax2 = axes[1, i]
-            ax2.plot(actuals, 'b-', label='Actual', linewidth=0.09, alpha=0.9)        # thinner + more transparent
-            ax2.plot(predictions, 'r-', label='Predicted', linewidth=0.09, alpha=1)  # thinner + more transparent
-            ax2.set_xlabel('Sample Index', fontsize=12)
-            ax2.set_ylabel('Energy Usage (MWh)', fontsize=12)
-            ax2.set_title(f'{horizon} Horizon: Full Series', fontsize=14)
-            ax2.legend(title=f"MAPE: {mape:.2f}%", fontsize=10)
-            ax2.grid(True, alpha=0.3)
-
-        plt.tight_layout()
-
-        _SavePlot(save_path, show_plots)
-    
-    # Load model + scalers
-    model, feature_scaler, target_scaler = _LoadModel(False)
-
-    # Load dataset
-    samples, targets, _ = load_dataset(DATASET_PATH, False)
-
-    # Evaluate horizons
-    pred_1h, act_1h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=0)
-    pred_24h, act_24h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=23)
-    pred_168h, act_168h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=167)
-    
-    PlotAllHorizons(
-        preds_list=[pred_1h, pred_24h, pred_168h],
-        acts_list=[act_1h, act_24h, act_168h],
-        horizons=['1h', '24h', '168h'],
-        save_path=save_path, 
-        show_plots=show_plots)
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"Predictions vs Actuals plot saved to {save_path}")
+    if show_plots:
+        plt.show()
+    else:
+        plt.close(fig)
 
 def TrainingValidationPlot(train_losses, val_losses, save_path=None, show_plots=True):
     """
@@ -169,33 +153,47 @@ def TrainingValidationPlot(train_losses, val_losses, save_path=None, show_plots=
     else:
         plt.close(fig)
 
-def FirstWeekPredictionPlot(save_path=None, show_plots=True):
+def FirstWeekPredictionPlot(model_name='LSTM', save_path=None, show_plots=True):
 
-    # --- Load ---
-    model, feature_scaler, target_scaler = _LoadModel()
-    model.eval()
-
+    # --- Load dataset ---
     samples, targets, _ = load_dataset(DATASET_PATH, False)
 
     predictions = []
     actual_week = []
 
-    # Build first 168-hour forecast sequentially
-    for i in range(168):
+    if model_name.upper() == 'LSTM':
+        # --- Load LSTM model ---
+        model, feature_scaler, target_scaler = _LoadModel()
+        model.eval()
 
-        sample_i = samples[i]      # (168, 9)
-        target_i = targets[i]      # scalar
+        # Build first 168-hour forecast sequentially
+        for i in range(168):
+            sample_i = samples[i]      # (168, 9)
+            target_i = targets[i]      # scalar
 
-        sample_scaled = feature_scaler.transform(sample_i)
-        sample_tensor = torch.tensor(sample_scaled, dtype=torch.float32).unsqueeze(0)
+            sample_scaled = feature_scaler.transform(sample_i)
+            sample_tensor = torch.tensor(sample_scaled, dtype=torch.float32).unsqueeze(0)
 
-        with torch.no_grad():
-            pred_scaled = model(sample_tensor).squeeze().item()
+            with torch.no_grad():
+                pred_scaled = model(sample_tensor).squeeze().item()
 
-        pred = target_scaler.inverse_transform([[pred_scaled]])[0, 0]
+            pred = target_scaler.inverse_transform([[pred_scaled]])[0, 0]
 
-        predictions.append(pred)
-        actual_week.append(target_i)
+            predictions.append(pred)
+            actual_week.append(target_i)
+
+    elif model_name.upper() == 'BASELINE':
+        # Baseline: predict each hour using the previous hour's value
+        for i in range(168):
+            actual_week.append(targets[i])
+            if i == 0:
+                # No previous hour available, use the same value
+                predictions.append(targets[i])
+            else:
+                predictions.append(targets[i - 1])
+
+    else:
+        raise ValueError(f"Unknown model_name: {model_name}. Use 'LSTM' or 'Baseline'.")
 
     predictions = np.array(predictions)
     actual_week = np.array(actual_week)
@@ -210,7 +208,7 @@ def FirstWeekPredictionPlot(save_path=None, show_plots=True):
 
     ax.set_xlabel('Hour')
     ax.set_ylabel('Energy Usage (MWh)')
-    ax.set_title('First 168 Hour Forecast')
+    ax.set_title(f'{model_name} - First 168 Hour Forecast')
     ax.legend()
     ax.grid(alpha=0.3)
 
@@ -218,6 +216,7 @@ def FirstWeekPredictionPlot(save_path=None, show_plots=True):
 
     if save_path:
         plt.savefig(save_path, dpi=300)
+        print(f"First week prediction plot saved to {save_path}")
 
     if show_plots:
         plt.show()
@@ -297,6 +296,115 @@ def FirstWeekPredictionMCPlot(save_path=None, show_plots=True, mc_passes=50):
     else:
         plt.close(fig)
 
+# =============================================================================
+# Helper functions
+# =============================================================================
+
+def _compute_mape(actuals, predictions):
+    """Compute MAPE, handling NaN and zero values."""
+    valid_mask = ~(np.isnan(actuals) | np.isnan(predictions) | (actuals == 0))
+    if valid_mask.sum() == 0:
+        return float('nan')
+    return np.mean(np.abs((actuals[valid_mask] - predictions[valid_mask]) / actuals[valid_mask])) * 100
+
+def _EvaluateBaselineHorizon(targets, horizon):
+    """
+    Baseline model: predict t+horizon using the value at t.
+    (Naive persistence forecast over the full horizon.)
+
+    Args:
+        targets: Array of actual energy values
+        horizon: How many hours ahead (0-based: 0=1h, 23=24h, 167=168h)
+
+    Returns:
+        predictions, actuals arrays
+    """
+    h = horizon + 1  # convert 0-based to actual step count
+
+    # Predict value at t+h using value at t
+    predictions = targets[:-h]
+    actuals = targets[h:]
+
+    # Ensure same length
+    min_len = min(len(predictions), len(actuals))
+    predictions = predictions[:min_len]
+    actuals = actuals[:min_len]
+
+    # Remove NaN pairs
+    valid_mask = ~(np.isnan(predictions) | np.isnan(actuals))
+    predictions = predictions[valid_mask]
+    actuals = actuals[valid_mask]
+
+    return predictions, actuals
+
+def _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=0):
+    predictions = []
+    actuals = []
+
+    max_idx = len(samples) - horizon
+
+    model.eval()  # important
+
+    for i in range(max_idx):
+        sample = samples[i]
+        actual = targets[i + horizon]
+
+        # --- Normalize input ---
+        n_features = sample.shape[1]
+        sample_flat = sample.reshape(-1, n_features)
+        sample_scaled = feature_scaler.transform(sample_flat)
+        sample_scaled = sample_scaled.reshape(1, 168, n_features)
+
+        sample_tensor = torch.FloatTensor(sample_scaled)
+
+        # --- Predict ---
+        with torch.no_grad():
+            prediction_scaled = model(sample_tensor).numpy().flatten()[0]
+
+        prediction = target_scaler.inverse_transform(
+            [[prediction_scaled]]
+        )[0][0]
+
+        predictions.append(prediction)
+        actuals.append(actual)
+
+    predictions = np.array(predictions)
+    actuals = np.array(actuals)
+
+    return predictions, actuals
+
+def _GetPredictionsAndActuals(model_name='LSTM'):
+    """
+    Get predictions and actuals for all horizons based on model type.
+
+    Args:
+        model_name: 'LSTM' or 'Baseline'
+
+    Returns:
+        Tuple of (preds_list, acts_list) for horizons [1h, 24h, 168h]
+    """
+    # Load dataset (needed for both models)
+    samples, targets, _ = load_dataset(DATASET_PATH, False)
+
+    if model_name.upper() == 'LSTM':
+        # Load LSTM model and evaluate
+        model, feature_scaler, target_scaler = _LoadModel(False)
+
+        pred_1h, act_1h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=0)
+        pred_24h, act_24h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=23)
+        pred_168h, act_168h = _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=167)
+
+    elif model_name.upper() == 'BASELINE':
+        # Baseline: predict using previous hour's value
+        pred_1h, act_1h = _EvaluateBaselineHorizon(targets, horizon=0)
+        pred_24h, act_24h = _EvaluateBaselineHorizon(targets, horizon=23)
+        pred_168h, act_168h = _EvaluateBaselineHorizon(targets, horizon=167)
+
+    else:
+        raise ValueError(f"Unknown model_name: {model_name}. Use 'LSTM' or 'Baseline'.")
+
+    return [pred_1h, pred_24h, pred_168h], [act_1h, act_24h, act_168h]
+
 def _LoadModel(verbose=True):
 
     try:
@@ -329,44 +437,6 @@ def _LoadModel(verbose=True):
         print(f"Num layers: {num_layers}")
 
     return model, feature_scaler, target_scaler
-
-def _EvaluateHorizon(model, samples, targets, feature_scaler, target_scaler, horizon=0):
-
-        predictions = []
-        actuals = []
-
-        max_idx = len(samples) - horizon
-
-        model.eval()  # important
-
-        for i in range(max_idx):
-
-            sample = samples[i]
-            actual = targets[i + horizon]
-
-            # --- Normalize input ---
-            n_features = sample.shape[1]
-            sample_flat = sample.reshape(-1, n_features)
-            sample_scaled = feature_scaler.transform(sample_flat)
-            sample_scaled = sample_scaled.reshape(1, 168, n_features)
-
-            sample_tensor = torch.FloatTensor(sample_scaled)
-
-            # --- Predict ---
-            with torch.no_grad():
-                prediction_scaled = model(sample_tensor).numpy().flatten()[0]
-
-            prediction = target_scaler.inverse_transform(
-                [[prediction_scaled]]
-            )[0][0]
-
-            predictions.append(prediction)
-            actuals.append(actual)
-
-        predictions = np.array(predictions)
-        actuals = np.array(actuals)
-
-        return predictions, actuals
 
 def _SavePlot(save_path, show_plots):
     """Save the current figure if a path is given, then display it."""
