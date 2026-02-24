@@ -1,12 +1,34 @@
 import pandas as pd
 import numpy as np
 import torch
+import argparse
+import os
 from tqdm import tqdm
+
+# -----------------------------
+# [CHANGE] --local flag: use relative paths when running locally for testing.
+# Usage: python3 DatasetCreation.py --local
+# Without the flag, server paths are used (default behavior).
+# -----------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument('--local', action='store_true', help='Use local relative paths instead of server paths')
+args = parser.parse_args()
+
+if args.local:
+    # Relative to the script's directory (ServerReady/ModelTuning/)
+    _dir = os.path.dirname(os.path.abspath(__file__))
+    csv_file = os.path.join(_dir, "..", "..", "RingkøbingData.csv")
+    output_path = os.path.join(_dir, "dataset.pt")
+    print("Running in LOCAL mode (relative paths)")
+else:
+    # Server paths (default)
+    csv_file = "/ceph/project/SW6-Group18-Abvaerk/RingkøbingData.csv"
+    output_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
+    print("Running in SERVER mode (absolute paths)")
 
 # -----------------------------
 # Config
 # -----------------------------
-csv_file = "RingkøbingData.csv"  # your CSV path
 encoder_history = 168  # 1 week of past data
 forecast_length = 168  # 1 week forecast
 
@@ -20,13 +42,13 @@ print(f"Loaded {len(df)} rows.")
 # Interpolate missing values (instead of filling with 0)
 # -----------------------------
 # Interpolate abvaerk
-df['abvaerk'] = df['abvaerk'].interpolate(method='linear').fillna(method='bfill').fillna(method='ffill')
+df['abvaerk'] = df['abvaerk'].interpolate(method='linear').bfill().ffill()
 
 # Interpolate other forecast columns
 forecast_features = ['toutdoor', 'temperature', 'relativeHumidity', 'windSpeed', 'precipitation', 'cloudCover']
 for col in forecast_features:
     if col in df.columns:
-        df[col] = df[col].interpolate(method='linear').fillna(method='bfill').fillna(method='ffill')
+        df[col] = df[col].interpolate(method='linear').bfill().ffill()
 
 # -----------------------------
 # Prepare forecast column lists (week ahead)

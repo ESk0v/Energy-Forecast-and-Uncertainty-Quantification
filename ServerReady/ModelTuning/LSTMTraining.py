@@ -3,17 +3,40 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset, random_split
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
+import os
 from tqdm import tqdm
 from LSTMModel import Config, LSTMForecast
 
 # -----------------------------
-# Absolute paths
+# [CHANGE] --local flag: use relative paths when running locally for testing.
+# Usage: python3 LSTMTraining.py --local
+# Without the flag, server paths are used (default behavior).
 # -----------------------------
-dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-model_save_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/best_lstm_forecast_model.pth"
-train_val_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/train_val_loss.png"
-residual_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/residuals.png"
-test_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/test_predictions.png"
+parser = argparse.ArgumentParser()
+parser.add_argument('--local', action='store_true', help='Use local relative paths instead of server paths')
+args = parser.parse_args()
+
+if args.local:
+    # Relative to the script's directory (ServerReady/ModelTuning/)
+    _dir = os.path.dirname(os.path.abspath(__file__))
+    dataset_path = os.path.join(_dir, "dataset.pt")
+    model_save_path = os.path.join(_dir, "best_lstm_forecast_model.pth")
+    train_val_plot_path = os.path.join(_dir, "train_val_loss.png")
+    residual_plot_path = os.path.join(_dir, "residuals.png")
+    test_plot_path = os.path.join(_dir, "test_predictions.png")
+    horizon_plot_path = os.path.join(_dir, "per_horizon_metrics.png")
+    print("Running in LOCAL mode (relative paths)")
+else:
+    # Server paths (default)
+    dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
+    model_save_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/best_lstm_forecast_model.pth"
+    train_val_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/train_val_loss.png"
+    residual_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/residuals.png"
+    test_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/test_predictions.png"
+    # [CHANGE] Added per-horizon metrics plot to see how accuracy degrades with forecast distance
+    horizon_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/per_horizon_metrics.png"
+    print("Running in SERVER mode (absolute paths)")
 
 # -----------------------------
 # Load Dataset
