@@ -3,14 +3,15 @@ Main Pipeline Orchestrator
 ==========================
 Executes the full training pipeline in order:
 
-    1. Dataset Creation  — Reads CSV, builds encoder/decoder/target tensors, saves dataset.pt
-    2. Dataset Inspection — (Optional, --inspect) Prints a sample from the dataset for debugging
-    3. LSTM Training      — Trains the model, saves the best checkpoint, generates evaluation plots
+    1. Dataset Creation   — Reads CSV, builds encoder/decoder/target tensors, saves dataset.pt
+    2. Dataset Inspection  — (Optional, --inspect) Prints a sample from the dataset for debugging
+    3. LSTM Training       — Trains the model, saves the best checkpoint
+    4. Evaluation Plotting — Loads checkpoint, runs inference, generates evaluation plots
 
 Usage:
-    python3 Main.py --local                  # Run full pipeline locally
-    python3 Main.py --local --inspect        # Run full pipeline locally with dataset inspection
-    python3 Main.py                          # Run full pipeline on server (default)
+    python3 Main.py --local                    # Run full pipeline locally
+    python3 Main.py --local --inspect          # Run full pipeline locally with dataset inspection
+    python3 Main.py                            # Run full pipeline on server (default)
     python3 Main.py --inspect --inspect-idx 5  # Inspect sample at index 5
 """
 
@@ -20,6 +21,7 @@ import os
 from DatasetCreation import main as create_dataset
 from DatasetLookup import main as inspect_dataset
 from LSTMTraining import main as train_model
+from Plotting import main as generate_plots
 
 
 def main():
@@ -45,7 +47,7 @@ def main():
     # Step 1: Dataset Creation
     # Only creates a new dataset if dataset.pt does not already exist.
     # -----------------------------------------------------------------
-    print(f"[Step 1/3] Dataset Creation")
+    print(f"[Step 1/4] Dataset Creation")
     print("-" * 40)
 
     if local:
@@ -64,19 +66,27 @@ def main():
     # Step 2: Dataset Inspection (optional — only with --inspect flag)
     # -----------------------------------------------------------------
     if args.inspect:
-        print(f"[Step 2/3] Dataset Inspection (sample index: {args.inspect_idx})")
+        print(f"[Step 2/4] Dataset Inspection (sample index: {args.inspect_idx})")
         print("-" * 40)
         inspect_dataset(local=local, line_idx=args.inspect_idx)
         print()
     else:
-        print(f"[Step 2/3] Dataset Inspection — skipped (use --inspect to enable)\n")
+        print(f"[Step 2/4] Dataset Inspection — skipped (use --inspect to enable)\n")
 
     # -----------------------------------------------------------------
-    # Step 3: Model Training + Evaluation Plots
+    # Step 3: Model Training
     # -----------------------------------------------------------------
-    print(f"[Step 3/3] LSTM Training")
+    print(f"[Step 3/4] LSTM Training")
     print("-" * 40)
     train_model(local=local)
+    print()
+
+    # -----------------------------------------------------------------
+    # Step 4: Evaluation Plotting
+    # -----------------------------------------------------------------
+    print(f"[Step 4/4] Evaluation Plotting")
+    print("-" * 40)
+    generate_plots(local=local)
 
     print(f"\n{'='*60}")
     print(f"  Pipeline complete.")
