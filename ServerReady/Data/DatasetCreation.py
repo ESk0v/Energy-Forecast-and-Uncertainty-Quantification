@@ -20,7 +20,7 @@ def main(local=False):
     if local:
         _dir = os.path.dirname(os.path.abspath(__file__))
         csv_file = os.path.join(_dir, "..", "..", "RingkøbingData.csv")
-        output_path = os.path.join(_dir, "dataset.pt")
+        output_path = os.path.join(_dir, "..", "ModelTuning", "dataset.pt")
         print("Running in LOCAL mode (relative paths)")
     else:
         csv_file = "/ceph/project/SW6-Group18-Abvaerk/RingkøbingData.csv"

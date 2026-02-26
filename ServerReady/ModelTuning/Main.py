@@ -17,9 +17,14 @@ Usage:
 
 import argparse
 import os
+import sys
 
-from ServerReady.Data.DatasetCreation import main as create_dataset
-from ServerReady.Data.DatasetLookup import main as inspect_dataset
+# Add the Data folder to sys.path so we can import from the sibling directory
+_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_dir, "..", "Data"))
+
+from DatasetCreation import main as create_dataset
+from DatasetLookup import main as inspect_dataset
 from LSTMTraining import main as train_model
 from Plotting import main as generate_plots
 

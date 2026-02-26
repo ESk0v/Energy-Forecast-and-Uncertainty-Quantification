@@ -22,12 +22,27 @@ def main(local=False):
     if local:
         _dir = os.path.dirname(os.path.abspath(__file__))
         dataset_path = os.path.join(_dir, "dataset.pt")
-        model_save_path = os.path.join(_dir, "best_lstm_forecast_model.pth")
+        model_dir = os.path.join(_dir, "..", "Models", "SingleLSTM")
         print("Running in LOCAL mode (relative paths)")
     else:
         dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-        model_save_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/best_lstm_forecast_model.pth"
+        model_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/Models/SingleLSTM"
         print("Running in SERVER mode (absolute paths)")
+
+    os.makedirs(model_dir, exist_ok=True)
+
+    # Auto-increment model version: model_v1.pth, model_v2.pth, ...
+    existing = [f for f in os.listdir(model_dir) if f.startswith("model_v") and f.endswith(".pth")]
+    existing_versions = []
+    for f in existing:
+        try:
+            v = int(f.replace("model_v", "").replace(".pth", ""))
+            existing_versions.append(v)
+        except ValueError:
+            pass
+    next_version = max(existing_versions, default=0) + 1
+    model_save_path = os.path.join(model_dir, f"model_v{next_version}.pth")
+    print(f"Model will be saved as: model_v{next_version}.pth")
 
     # -----------------------------
     # Load Dataset

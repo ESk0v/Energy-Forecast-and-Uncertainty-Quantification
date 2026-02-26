@@ -17,7 +17,7 @@ def main(local=False, line_idx=0):
     # -----------------------------
     if local:
         _dir = os.path.dirname(os.path.abspath(__file__))
-        dataset_path = os.path.join(_dir, "dataset.pt")
+        dataset_path = os.path.join(_dir, "..", "ModelTuning", "dataset.pt")
     else:
         dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
 

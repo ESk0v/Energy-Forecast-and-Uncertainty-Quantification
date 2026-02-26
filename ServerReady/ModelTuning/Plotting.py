@@ -31,20 +31,44 @@ def main(local=False):
     if local:
         _dir = os.path.dirname(os.path.abspath(__file__))
         dataset_path = os.path.join(_dir, "dataset.pt")
-        model_save_path = os.path.join(_dir, "best_lstm_forecast_model.pth")
-        train_val_plot_path = os.path.join(_dir, "train_val_loss.png")
-        residual_plot_path = os.path.join(_dir, "residuals.png")
-        test_plot_path = os.path.join(_dir, "test_predictions.png")
-        horizon_plot_path = os.path.join(_dir, "per_horizon_metrics.png")
-        print("Running in LOCAL mode (relative paths)")
+        model_dir = os.path.join(_dir, "..", "Models", "SingleLSTM")
+
+        # Plot output directory: ../Plots/
+        plot_dir = os.path.join(_dir, "..", "Plots")
+        os.makedirs(plot_dir, exist_ok=True)
+
+        train_val_plot_path = os.path.join(plot_dir, "train_val_loss.png")
+        residual_plot_path = os.path.join(plot_dir, "residuals.png")
+        test_plot_path = os.path.join(plot_dir, "test_predictions.png")
+        horizon_plot_path = os.path.join(plot_dir, "per_horizon_metrics.png")
+        print(f"Running in LOCAL mode (plots → {plot_dir})")
     else:
         dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-        model_save_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/best_lstm_forecast_model.pth"
-        train_val_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/train_val_loss.png"
-        residual_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/residuals.png"
-        test_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/test_predictions.png"
-        horizon_plot_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/per_horizon_metrics.png"
-        print("Running in SERVER mode (absolute paths)")
+        model_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/Models/SingleLSTM"
+
+        plot_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/Plots"
+        os.makedirs(plot_dir, exist_ok=True)
+
+        train_val_plot_path = os.path.join(plot_dir, "train_val_loss.png")
+        residual_plot_path = os.path.join(plot_dir, "residuals.png")
+        test_plot_path = os.path.join(plot_dir, "test_predictions.png")
+        horizon_plot_path = os.path.join(plot_dir, "per_horizon_metrics.png")
+        print(f"Running in SERVER mode (plots → {plot_dir})")
+
+    # Find the latest versioned model: model_v1.pth, model_v2.pth, ...
+    existing = [f for f in os.listdir(model_dir) if f.startswith("model_v") and f.endswith(".pth")]
+    existing_versions = []
+    for f in existing:
+        try:
+            v = int(f.replace("model_v", "").replace(".pth", ""))
+            existing_versions.append(v)
+        except ValueError:
+            pass
+    if not existing_versions:
+        raise FileNotFoundError(f"No versioned models found in {model_dir}")
+    latest_version = max(existing_versions)
+    model_save_path = os.path.join(model_dir, f"model_v{latest_version}.pth")
+    print(f"Loading latest model: model_v{latest_version}.pth")
 
     # -----------------------------
     # Load checkpoint
