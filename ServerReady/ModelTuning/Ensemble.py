@@ -13,9 +13,9 @@ from LSTMModel import LSTMForecast, Config
 # Paths relative to project root
 # -----------------------------
 project_root = Path(__file__).parent.parent.parent
-dataset_path = project_root / "ServerReady" / "ModelTuning" / "dataset.pt"
-ensemble_save_dir = project_root / "ServerReady" / "EnsembleModel" / "Models"
-plot_path = project_root / "ServerReady" / "EnsembleModel" / "Plots" / "test_predictions_plot.png"
+dataset_path = project_root / "ServerReady" / "Data" / "dataset.pt"
+ensemble_save_dir = project_root / "ServerReady" / "Models" / "EnsembleModel"
+plot_path = project_root / "ServerReady" / "Plots" / "uncertainty_plot.png"
 
 # -----------------------------
 # Device and batch config
@@ -149,8 +149,6 @@ def _EvaluateModel(test_loader, models, target_scaler, device):
     start = week_index * 168
     end = start + 168
 
-    print(f"Selected week index: {week_index} -> time steps {start} to {end-1}")
-
     # safety check in case dataset is smaller
     end = min(end, len(meanPredictions))
 
@@ -158,11 +156,7 @@ def _EvaluateModel(test_loader, models, target_scaler, device):
     std_preds_week = stdPredictions[start:end]
     targets_week = targets[start:end]
 
-    #print(targets_week)
-
     time_steps = np.arange(len(mean_preds_week))
-
-    #print(time_steps[0])
 
     print(targets_week[time_steps[0]])
 

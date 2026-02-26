@@ -18,8 +18,8 @@ Usage:
 import argparse
 import os
 
-from DatasetCreation import main as create_dataset
-from DatasetLookup import main as inspect_dataset
+from ServerReady.Data.DatasetCreation import main as create_dataset
+from ServerReady.Data.DatasetLookup import main as inspect_dataset
 from LSTMTraining import main as train_model
 from Plotting import main as generate_plots
 
