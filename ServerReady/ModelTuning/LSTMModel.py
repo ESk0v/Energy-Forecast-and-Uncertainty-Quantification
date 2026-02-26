@@ -12,8 +12,8 @@ class Config:
     hidden_size = 128          # LSTM hidden state dimensionality
     num_layers = 2             # Number of stacked LSTM layers
     dropout = 0.2              # Dropout rate for regularization
-    epochs = 50000             # Total training iterations over the dataset
-    batch_size = 64            # Number of samples per training step
+    epochs = 1             # Total training iterations over the dataset
+    batch_size = 16            # Number of samples per training step
     learning_rate = 1e-3       # Optimizer step size
 
     device = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else CPU

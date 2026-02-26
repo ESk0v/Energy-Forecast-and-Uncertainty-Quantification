@@ -1,37 +1,55 @@
 import torch
-import numpy as np
+import sys
+import os
 
-# Load your dataset (single .pt file)
-data = torch.load("dataset.pt")  # replace with your .pt file path
 
-encoder = data['encoder']
-decoder = data['decoder']
-target = data['target']
+def main(local=False, line_idx=0):
+    """
+    Inspect the dataset by printing encoder, decoder, and target for a given sample index.
 
-# Function to print full tensor line by line
-def print_full_tensor_line(tensor, name, line_idx=0):
-    print(f"\n{name} - line {line_idx}:")
-    # Convert to numpy for prettier printing
-    arr = tensor[line_idx].numpy() if isinstance(tensor[line_idx], torch.Tensor) else tensor[line_idx]
-    # Print each row fully
-    if arr.ndim == 2:
-        for i, row in enumerate(arr):
-            print(f"Row {i}: {row}")
+    Args:
+        local: If True, use relative paths. If False, use server paths.
+        line_idx: The sample index to inspect.
+    """
+
+    # -----------------------------
+    # Paths
+    # -----------------------------
+    if local:
+        _dir = os.path.dirname(os.path.abspath(__file__))
+        dataset_path = os.path.join(_dir, "dataset.pt")
     else:
-        print(arr)
+        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
 
-# Print first encoder sequence
-print_full_tensor_line(encoder, "Encoder", line_idx=0)
+    # -----------------------------
+    # Load dataset
+    # -----------------------------
+    data = torch.load(dataset_path, weights_only=True)
 
-# Print first decoder sequence
-print_full_tensor_line(decoder, "Decoder", line_idx=0)
+    encoder = data['encoder']
+    decoder = data['decoder']
+    target = data['target']
 
-# Print first target sequence
-print_full_tensor_line(target, "Target", line_idx=0)
+    def print_full_tensor_line(tensor, name, idx):
+        print(f"\n{name} - line {idx}:")
+        arr = tensor[idx].numpy() if isinstance(tensor[idx], torch.Tensor) else tensor[idx]
+        if arr.ndim == 2:
+            for i, row in enumerate(arr):
+                print(f"Row {i}: {row}")
+        else:
+            print(arr)
 
-row = np.array(encoder)  # your row
-row2 = np.array(decoder)
-row3 = np.array(target)
-print("Shape of row:", row.shape)
-print("Shape of row:", row2.shape)
-print("Shape of row:", row3.shape)
+    print_full_tensor_line(encoder, "Encoder", line_idx)
+    print_full_tensor_line(decoder, "Decoder", line_idx)
+    print_full_tensor_line(target, "Target", line_idx)
+
+    print(f"\nEncoder shape: {encoder.shape}")
+    print(f"Decoder shape: {decoder.shape}")
+    print(f"Target shape:  {target.shape}")
+
+
+# Allow standalone execution: python3 DatasetLookup.py [line_index]
+if __name__ == "__main__":
+    idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    # Default to local when running standalone
+    main(local=True, line_idx=idx)

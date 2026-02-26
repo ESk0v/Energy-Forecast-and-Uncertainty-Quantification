@@ -19,5 +19,5 @@ source ~/ceph/projects/SW6-Group18-Abvaerk/.venv/bin/activate
 # Move to project folder
 cd ~/ceph/projects/SW6-Group18-Abvaerk
 
-# Run the tuning script
-python ./ServerReady/ModelTuning/LSTMTraining.py
+# Run the pipeline via Main.py orchestrator
+python ./ServerReady/ModelTuning/Main.py
