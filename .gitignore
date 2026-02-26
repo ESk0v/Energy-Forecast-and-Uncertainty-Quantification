@@ -1,4 +1,3 @@
-/dataset.pt
 /RingkøbingData.csv
 /src/DataSet/dataset.json
 /Files/RingkøbingData.csv
@@ -7,6 +6,8 @@
 #LSTM Files ignored
 /src/Files/dataset.json
 /src/Files/LSTMModels/lstm_model.pth
+/ServerReady/ModelTuning/dataset.pt
+
 
 #Pycache and pyc files ignored
 __pycache__/
