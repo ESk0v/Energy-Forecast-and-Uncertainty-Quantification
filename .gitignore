@@ -6,3 +6,4 @@
 #LSTM Files ignored
 /src/Files/dataset.json
 /src/Files/LSTMModels/lstm_model.pth
+/ServerReady/ModelTuning/dataset.pt
