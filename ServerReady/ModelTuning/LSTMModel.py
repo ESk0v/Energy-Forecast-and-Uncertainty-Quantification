@@ -12,7 +12,7 @@ class Config:
     hidden_size = 128          # LSTM hidden state dimensionality
     num_layers = 2             # Number of stacked LSTM layers
     dropout = 0.2              # Dropout rate for regularization
-    epochs = 1             # Total training iterations over the dataset
+    epochs = 2             # Total training iterations over the dataset
     batch_size = 16            # Number of samples per training step
     learning_rate = 1e-3       # Optimizer step size
 
