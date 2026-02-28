@@ -18,8 +18,7 @@ class ForecastDataset(Dataset):
     def __getitem__(self, idx):
         return self.samples[idx], self.targets[idx]
 
-
-def load_dataset(filepath):
+def load_dataset(filepath, verbose=True):
     """
     Load, validate, and clean the dataset from a JSON file.
 
@@ -34,14 +33,15 @@ def load_dataset(filepath):
     samples = np.array(data['samples'], dtype=np.float32)
     targets = np.array(data['targets'], dtype=np.float32)
 
-    # --- Data quality report ---
-    print("\nData quality check:")
-    print(f"  Samples NaN count : {np.isnan(samples).sum()}")
-    print(f"  Samples Inf count : {np.isinf(samples).sum()}")
-    print(f"  Targets NaN count : {np.isnan(targets).sum()}")
-    print(f"  Targets Inf count : {np.isinf(targets).sum()}")
-    print(f"  Samples range     : [{np.nanmin(samples):.4f}, {np.nanmax(samples):.4f}]")
-    print(f"  Targets range     : [{np.nanmin(targets):.4f}, {np.nanmax(targets):.4f}]")
+    if verbose:
+        # --- Data quality report ---
+        print("\nData quality check:")
+        print(f"  Samples NaN count : {np.isnan(samples).sum()}")
+        print(f"  Samples Inf count : {np.isinf(samples).sum()}")
+        print(f"  Targets NaN count : {np.isnan(targets).sum()}")
+        print(f"  Targets Inf count : {np.isinf(targets).sum()}")
+        print(f"  Samples range     : [{np.nanmin(samples):.4f}, {np.nanmax(samples):.4f}]")
+        print(f"  Targets range     : [{np.nanmin(targets):.4f}, {np.nanmax(targets):.4f}]")
 
     # --- Remove invalid rows ---
     valid_mask = ~np.isnan(targets) & ~np.isinf(targets)
@@ -52,12 +52,13 @@ def load_dataset(filepath):
     samples = samples[valid_mask]
     targets = targets[valid_mask]
 
-    # --- Summary ---
-    print(f"\nLoaded dataset:")
-    print(f"  Samples shape : {samples.shape}")
-    print(f"  Targets shape : {targets.shape}")
-    print(f"  Features      : {data['feature_names']}")
-    print(f"  Removed       : {(~valid_mask).sum()} invalid samples")
+    if verbose:
+        # --- Summary ---
+        print(f"\nLoaded dataset:")
+        print(f"  Samples shape : {samples.shape}")
+        print(f"  Targets shape : {targets.shape}")
+        print(f"  Features      : {data['feature_names']}")
+        print(f"  Removed       : {(~valid_mask).sum()} invalid samples")
 
     return samples, targets, data
 
