@@ -7,19 +7,45 @@ import os
 # CONFIG
 # -----------------------------
 class Config:
-    encoder_history = 168      # Number of past timesteps fed to the encoder
-    forecast_length = 168      # Number of future timesteps to predict
-    encoder_features = 8       # Number of input features for the encoder
-    decoder_features = 11      # Number of input features for the decoder
-    hidden_size = 128          # LSTM hidden state dimensionality
-    num_layers = 2             # Number of stacked LSTM layers
-    dropout = 0.2              # Dropout rate for regularization
-    epochs = 2                 # Total training iterations over the dataset
-    batch_size = 16            # Number of samples per training step
-    learning_rate = 1e-3       # Optimizer step size
+    # Default hyperparameters
+    encoder_history = 168
+    forecast_length = 168
+    encoder_features = 8
+    decoder_features = 11
+    hidden_size = 128
+    num_layers = 2
+    dropout = 0.2
+    epochs = 2
+    batch_size = 16
+    learning_rate = 1e-3
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    output_size = 1
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available, else CPU
-    output_size = 1            # Number of predicted output variables
+    tuned_config_path = "NewModelFolder/Files/HPTTuning.json"
+
+    @classmethod
+    def load_from_file(cls, path=None):
+        path = path or cls.tuned_config_path
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                params = json.load(f)
+            for key, value in params.items():
+                if hasattr(cls, key):
+                    setattr(cls, key, value)
+                else:
+                    print(f"Warning: unknown config key '{key}' in JSON, skipping")
+
+    @classmethod
+    def auto_load(cls):
+        cls.load_from_file(cls.tuned_config_path)
+        print("\n=== Current Config ===")
+        # Print all class attributes that are hyperparameters
+        for key in dir(cls):
+            # Skip private/dunder attributes and methods
+            if key.startswith("_") or callable(getattr(cls, key)):
+                continue
+            print(f"{key}: {getattr(cls, key)}")
+        print("====================\n")
 
 # -----------------------------
 # MODEL
@@ -150,3 +176,5 @@ class LSTMForecast(nn.Module):
         # Project decoder hidden states to scalar predictions, remove trailing dim
         output = self.fc(decoder_output).squeeze(-1)
         return output
+
+Config.auto_load()

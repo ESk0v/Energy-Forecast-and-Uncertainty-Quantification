@@ -173,7 +173,7 @@ def objective(trial: Trial, train_dataset, val_dataset, device,
         return float('inf')
 
 
-def load_dataset(dataset_path, local=False):
+def load_dataset(local=False):
     """
     Load and split dataset into train/val/test sets.
     
@@ -187,15 +187,14 @@ def load_dataset(dataset_path, local=False):
         test_dataset: Test dataset (not used in tuning)
     """
     # Setup paths
-    if dataset_path is None:
-        if local:
-            # Get the script directory
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            # Go up one level to NewModelFolder, then into Files
-            dataset_path = os.path.join(script_dir, '..', 'Files', 'dataset.pt')
-            dataset_path = os.path.abspath(dataset_path)
-        else:
-            dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
+    if local:
+        # Get the script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up one level to NewModelFolder, then into Files
+        dataset_path = os.path.join(script_dir, '..', 'Files', 'dataset.pt')
+        dataset_path = os.path.abspath(dataset_path)
+    else:
+        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
     
     # Load dataset
     output.print_loading_dataset(dataset_path)
@@ -240,7 +239,7 @@ def get_results_dir(local=False):
         return "/ceph/project/SW6-Group18-Abvaerk/ServerReady"
 
 
-def run_hyperparameter_search(n_trials=50, local=False, dataset_path=None, 
+def run_hyperparameter_search(n_trials=50, local=False, 
                               verbose=False):
     """
     Run hyperparameter optimization using Optuna.
@@ -264,7 +263,7 @@ def run_hyperparameter_search(n_trials=50, local=False, dataset_path=None,
     output.print_device_info(device)
     
     # Load dataset
-    train_dataset, val_dataset, _ = load_dataset(dataset_path, local)
+    train_dataset, val_dataset, _ = load_dataset(local)
     
     # Create Optuna study
     study_name = f"lstm_tuning_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -293,74 +292,20 @@ def run_hyperparameter_search(n_trials=50, local=False, dataset_path=None,
     output.print_best_trial(study.best_trial)
     
     # Save best parameters as JSON
-    best_params_file = os.path.join(results_dir, f"{study_name}_best_params.json")
+    # Determine where to save/load the hyperparameter JSON
+    if local:
+        # Get the script directory (HyperparameterTuning folder)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up to NewModelFolder, then into Files
+        best_params_file = os.path.join(script_dir, '..', 'Files', 'HPTTuning.json')
+        best_params_file = os.path.abspath(best_params_file)
+        os.makedirs(os.path.dirname(best_params_file), exist_ok=True)
+    else:
+        best_params_file = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/HPTTuning.json"
+        print(best_params_file)
+        os.makedirs(os.path.dirname(best_params_file), exist_ok=True)
     with open(best_params_file, 'w') as f:
         json.dump(study.best_trial.params, f, indent=2)
     output.print_best_params_saved(best_params_file)
     
     return study
-
-
-def train_with_best_params(study, local=False, dataset_path=None):
-    """
-    Train a final model using the best hyperparameters found.
-    
-    Args:
-        study: Optuna study object with completed trials
-        local: Whether running in local mode
-        dataset_path: Path to dataset (optional)
-    
-    Returns:
-        model: Trained model
-        config: Configuration used
-    """
-    
-    # Setup paths
-    results_dir = get_results_dir(local)
-    model_save_path = os.path.join(results_dir, "best_tuned_lstm_model.pth")
-    
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    
-    # Load dataset
-    train_dataset, val_dataset, _ = load_dataset(dataset_path, local)
-    train_size = len(train_dataset)
-    val_size = len(val_dataset)
-    
-    # Create config with best parameters
-    config = Config()
-    best_params = study.best_trial.params
-    
-    config.hidden_size = best_params['hidden_size']
-    config.num_layers = best_params['num_layers']
-    config.dropout = best_params['dropout']
-    config.batch_size = best_params['batch_size']
-    config.learning_rate = best_params['learning_rate']
-    config.device = device
-    config.epochs = 100  # Train longer for final model
-    
-    output.print_final_model_header()
-    output.print_final_model_hyperparameters(best_params)
-    
-    # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, 
-                            shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, 
-                          shuffle=False)
-    
-    # Train final model
-    best_val_loss, model = train_model(
-        config, train_loader, val_loader, train_size, val_size, 
-        device, trial=None, max_epochs=config.epochs, verbose=True
-    )
-    
-    # Save final model
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'config': vars(config),
-        'best_params': best_params,
-        'val_loss': best_val_loss,
-    }, model_save_path)
-    
-    output.print_final_model_saved(model_save_path, best_val_loss)
-    
-    return model, config

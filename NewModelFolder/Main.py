@@ -1,17 +1,14 @@
 import argparse
-import sys
-
-from HyperparameterTuning.HyperparameterTuning import run_hyperparameter_search
+from HyperparameterTuning.HPTMain import hptmain
 from LSTM.LSTMMain import LSTMMain as train_model
-#from Ensemble.EnsembleMain import main as EnsembleModel
+from Ensemble.EnsembleMain import main as EnsembleModel
 
-def RunTuning(local=False, n_trials=50, dataset_path=None, verbose=False):
+def RunTuning(local=False, n_trials=50, verbose=False):
     print("Starting hyperparameter tuning...")
 
     study = hptmain(
         n_trials=n_trials,
         local=local,
-        dataset_path=dataset_path,
         verbose=verbose
     )
 
@@ -27,7 +24,7 @@ def RunLstm(local=False):
 
 def RunEnsemble():
     print("Starting ensemble...")
-    #EnsembleModel
+    EnsembleModel()
     print("Finished ensemble.")
 
 
@@ -71,12 +68,12 @@ def Main():
             verbose=args.verbose
         )
 
+
         print("RUNNING TRAINING")
         RunLstm(local=args.local)
 
         print("RUNNING ENSEBMLE")
         RunEnsemble()
-
 
 if __name__ == "__main__":
     Main()

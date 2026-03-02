@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from EnsembleHelpers import _EnsemblePredict
-from EnsembleConfig import PLOT_DIR
+from .EnsembleHelpers import _EnsemblePredict
+from .EnsembleConfig import PLOT_DIR
 
 
 def _EvaluateModel(test_loader, models, device):

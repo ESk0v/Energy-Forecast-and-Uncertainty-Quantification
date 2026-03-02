@@ -25,8 +25,8 @@ def main(local=False):
         model_dir = os.path.join(base_dir, "Models", "SingleLSTM")
         print("Running in LOCAL mode (relative paths)")
     else:
-        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-        model_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/Models/SingleLSTM"
+        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
+        model_dir = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
         print("Running in SERVER mode (absolute paths)")
 
     os.makedirs(model_dir, exist_ok=True)

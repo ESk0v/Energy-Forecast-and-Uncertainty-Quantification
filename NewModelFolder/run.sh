@@ -9,15 +9,7 @@
 #SBATCH --gres=gpu:1        # request 1 GPU
 #SBATCH --partition=l4       # correct GPU partition
 
-# Load modules
-module load python/3.10
-module load cuda             # ensures CUDA toolkit & drivers are available
-
 # Activate virtual environment
-source ~/ceph/projects/SW6-Group18-Abvaerk/.venv/bin/activate
-
-# Move to project folder
-cd ~/ceph/projects/SW6-Group18-Abvaerk
-
-# Run the pipeline via Main.py orchestrator
-python ./ServerReady/ModelTuning/Main.py
+cd /ceph/project/SW6-Group18-Abvaerk
+source /ceph/project/SW6-Group18-Abvaerk/.venv/bin/activate
+python NewModelFolder/Main.py --mode full --n_trials 1

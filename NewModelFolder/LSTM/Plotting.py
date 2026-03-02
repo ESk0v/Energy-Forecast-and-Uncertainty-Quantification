@@ -43,10 +43,10 @@ def main(local=False):
         horizon_plot_path = os.path.join(plot_dir, "per_horizon_metrics.png")
         print(f"Running in LOCAL mode (plots → {plot_dir})")
     else:
-        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-        model_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/Models/SingleLSTM"
+        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
+        model_dir = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
 
-        plot_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/Plots"
+        plot_dir = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Plots"
         os.makedirs(plot_dir, exist_ok=True)
 
         train_val_plot_path = os.path.join(plot_dir, "train_val_loss.png")

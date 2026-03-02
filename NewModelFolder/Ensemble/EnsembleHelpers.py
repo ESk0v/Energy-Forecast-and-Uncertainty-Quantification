@@ -13,7 +13,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from LSTMModel import LSTMForecast, Config
-from EnsembleConfig import DATASET_PATH, ENSEMBLE_SAVE_DIR, BATCH_SIZE, EPOCHS
+from .EnsembleConfig import DATASET_PATH, ENSEMBLE_SAVE_DIR, BATCH_SIZE, EPOCHS
 
 
 def _DataLoader():
