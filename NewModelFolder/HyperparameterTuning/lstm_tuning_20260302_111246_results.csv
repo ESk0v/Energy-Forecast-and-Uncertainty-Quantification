@@ -1,0 +1,2 @@
+number,value,datetime_start,datetime_complete,duration,params_batch_size,params_dropout,params_hidden_size,params_learning_rate,params_num_layers,state
+0,3.217983111323312,2026-03-02 11:12:46.612305,2026-03-02 11:16:54.348180,0 days 00:04:07.735875,8,0.39279757672456206,128,0.005399484409787433,4,COMPLETE
