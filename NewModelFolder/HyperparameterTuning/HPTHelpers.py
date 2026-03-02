@@ -2,18 +2,20 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset, Subset
 import numpy as np
-import argparse
 import os
 from tqdm import tqdm
 import optuna
 from optuna.trial import Trial
 import json
 from datetime import datetime
-
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from LSTMModel import Config, LSTMForecast
+from HyperparameterTuning import HPTOutput as output
 
 
-def train_model(config, train_loader, val_loader, train_size, val_size, device, trial=None, max_epochs=None, verbose=False):
+def train_model(config, train_loader, val_loader, train_size, val_size, device, 
+                trial=None, max_epochs=None, verbose=False):
     """
     Train the LSTM model with given hyperparameters.
     
@@ -33,8 +35,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device, 
         model: Trained model
     """
     if verbose and trial is not None:
-        print(f"\n  Trial {trial.number}: hidden_size={config.hidden_size}, num_layers={config.num_layers}, "
-              f"dropout={config.dropout:.2f}, batch_size={config.batch_size}, lr={config.learning_rate:.6f}")
+        output.print_trial_info(trial, config)
     
     model = LSTMForecast(config).to(device)
     criterion = nn.MSELoss()
@@ -57,7 +58,9 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device, 
         epoch_loss = 0
         
         # Add progress bar for first trial or if verbose
-        train_iter = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}", leave=False) if (verbose or (trial and trial.number == 0)) else train_loader
+        show_progress = verbose or (trial and trial.number == 0)
+        train_iter = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}", 
+                         leave=False) if show_progress else train_loader
         
         for enc, dec, tgt in train_iter:
             enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
@@ -85,7 +88,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device, 
         
         # Print progress for first few epochs or if verbose
         if verbose and epoch <= 3:
-            print(f"    Epoch {epoch}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
+            output.print_epoch_info(epoch, train_loss, val_loss)
         
         # Report to Optuna for pruning (if trial is provided)
         if trial is not None:
@@ -93,7 +96,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device, 
             # Check if trial should be pruned
             if trial.should_prune():
                 if verbose:
-                    print(f"    Trial pruned at epoch {epoch}")
+                    output.print_trial_pruned(epoch)
                 raise optuna.TrialPruned()
         
         # Early stopping
@@ -105,7 +108,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device, 
             epochs_no_improve += 1
             if epochs_no_improve >= patience:
                 if verbose:
-                    print(f"    Early stopped at epoch {epoch}")
+                    output.print_early_stopping(epoch)
                 break
     
     # Load best model
@@ -115,7 +118,8 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device, 
     return best_val_loss, model
 
 
-def objective(trial: Trial, train_dataset, val_dataset, device, local=False, verbose=False):
+def objective(trial: Trial, train_dataset, val_dataset, device, 
+              local=False, verbose=False):
     """
     Objective function for Optuna to optimize.
     
@@ -150,179 +154,61 @@ def objective(trial: Trial, train_dataset, val_dataset, device, local=False, ver
     # Create data loaders
     train_size = len(train_dataset)
     val_size = len(val_dataset)
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, 
+                            shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, 
+                          shuffle=False)
     
     try:
         # Train model with early stopping
         best_val_loss, _ = train_model(
             config, train_loader, val_loader, train_size, val_size, 
-            device, trial=trial, max_epochs=1, verbose=verbose  # Max epochs for tuning
+            device, trial=trial, max_epochs=1, verbose=verbose
         )
         
         return best_val_loss
     
     except Exception as e:
-        print(f"Trial failed with error: {e}")
+        output.print_trial_failed(e)
         return float('inf')
 
 
-def run_hyperparameter_search(n_trials=50, local=False, dataset_path=None, verbose=False):
+def load_dataset(dataset_path, local=False):
     """
-    Run hyperparameter optimization using Optuna.
+    Load and split dataset into train/val/test sets.
     
     Args:
-        n_trials: Number of trials to run
+        dataset_path: Path to dataset.pt file
         local: Whether running in local mode
-        dataset_path: Path to dataset (optional, auto-detected if None)
-        verbose: Whether to print detailed progress
     
     Returns:
-        study: Optuna study object with results
+        train_dataset: Training dataset
+        val_dataset: Validation dataset
+        test_dataset: Test dataset (not used in tuning)
     """
-    
     # Setup paths
-    if local:
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        _dir = os.path.dirname(os.path.abspath(__file__))
-        # Dataset path inside Files folder
-        if dataset_path is None:
-            dataset_path = os.path.join(BASE_DIR, "Files", "dataset.pt")
-
-        results_dir = _dir
-        print("Running in LOCAL mode (relative paths)")
-    else:
-        if dataset_path is None:
+    if dataset_path is None:
+        if local:
+            # Get the script directory
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            # Go up one level to NewModelFolder, then into Files
+            dataset_path = os.path.join(script_dir, '..', 'Files', 'dataset.pt')
+            dataset_path = os.path.abspath(dataset_path)
+        else:
             dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-        results_dir = "/ceph/project/SW6-Group18-Abvaerk/ServerReady"
-        print("Running in SERVER mode (absolute paths)")
-    
-    # Device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using device: {device}")
     
     # Load dataset
-    print(f"Loading dataset from {dataset_path}...")
-    dataset = torch.load(dataset_path, weights_only=True)
-    encoder_data = dataset['encoder']
-    decoder_data = dataset['decoder']
-    target_data = dataset['target']
-    full_dataset = TensorDataset(encoder_data, decoder_data, target_data)
+    output.print_loading_dataset(dataset_path)
     
-    # Train/Val split (we'll use the same split as training for consistency)
-    val_ratio = 0.1
-    test_ratio = 0.1
-    n_total = len(full_dataset)
-    test_size = int(n_total * test_ratio)
-    val_size = int(n_total * val_ratio)
-    train_size = n_total - val_size - test_size
+    if not os.path.exists(dataset_path):
+        print(f"\nError: Dataset file not found at: {dataset_path}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Script directory: {os.path.dirname(os.path.abspath(__file__))}")
+        print("\nPlease either:")
+        print("  1. Provide the correct path with --dataset <path>")
+        print("  2. Ensure dataset.pt is in the correct location")
+        sys.exit(1)
     
-    train_dataset = Subset(full_dataset, range(0, train_size))
-    val_dataset = Subset(full_dataset, range(train_size, train_size + val_size))
-    
-    print(f"Dataset split: Train={train_size}, Val={val_size}, Test={test_size}")
-    
-    # Create Optuna study
-    study_name = f"lstm_tuning_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    study = optuna.create_study(
-        study_name=study_name,
-        direction='minimize',
-        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10),
-        sampler=optuna.samplers.TPESampler(seed=42)
-    )
-    
-    print(f"\nStarting hyperparameter search with {n_trials} trials...")
-    print("=" * 70)
-    
-    if verbose:
-        print("\n(Verbose mode: showing detailed training progress)\n")
-    
-    # Optimize
-    study.optimize(
-        lambda trial: objective(trial, train_dataset, val_dataset, device, local, verbose),
-        n_trials=n_trials,
-        show_progress_bar=True
-    )
-    
-    # Print results
-    print("\n" + "=" * 70)
-    print("HYPERPARAMETER TUNING COMPLETE")
-    print("=" * 70)
-    print(f"\nBest trial:")
-    trial = study.best_trial
-    print(f"  Validation Loss: {trial.value:.6f}")
-    print(f"\n  Best Hyperparameters:")
-    for key, value in trial.params.items():
-        print(f"    {key}: {value}")
-    
-    # Save results
-    results_file = os.path.join(results_dir, f"{study_name}_results.csv")
-    df = study.trials_dataframe()
-    df.to_csv(results_file, index=False)
-    print(f"\nDetailed results saved to: {results_file}")
-    
-    # Save best parameters as JSON
-    best_params_file = os.path.join(results_dir, f"{study_name}_best_params.json")
-    with open(best_params_file, 'w') as f:
-        json.dump(trial.params, f, indent=2)
-    print(f"Best parameters saved to: {best_params_file}")
-    
-    # Generate visualizations if possible
-    try:
-        import optuna.visualization as vis
-        
-        viz_dir = os.path.join(results_dir, "optuna_visualizations")
-        os.makedirs(viz_dir, exist_ok=True)
-        
-        # Optimization history
-        fig1 = vis.plot_optimization_history(study)
-        fig1.write_html(os.path.join(viz_dir, 'optimization_history.html'))
-        
-        # Parameter importance
-        fig2 = vis.plot_param_importances(study)
-        fig2.write_html(os.path.join(viz_dir, 'param_importances.html'))
-        
-        # Parallel coordinate plot
-        fig3 = vis.plot_parallel_coordinate(study)
-        fig3.write_html(os.path.join(viz_dir, 'parallel_coordinate.html'))
-        
-        # Slice plot
-        fig4 = vis.plot_slice(study)
-        fig4.write_html(os.path.join(viz_dir, 'slice_plot.html'))
-        
-        print(f"\nVisualizations saved to: {viz_dir}")
-        
-    except Exception as e:
-        print(f"\nNote: Could not generate visualizations: {e}")
-        print("Install plotly for visualizations: pip install plotly")
-    
-    return study
-
-
-def train_with_best_params(study, local=False, dataset_path=None):
-    """
-    Train a final model using the best hyperparameters found.
-    
-    Args:
-        study: Optuna study object with completed trials
-        local: Whether running in local mode
-        dataset_path: Path to dataset (optional)
-    """
-    
-    # Setup paths
-    if local:
-        _dir = os.path.dirname(os.path.abspath(__file__))
-        if dataset_path is None:
-            dataset_path = os.path.join(_dir, "dataset.pt")
-        model_save_path = os.path.join(_dir, "best_tuned_lstm_model.pth")
-    else:
-        if dataset_path is None:
-            dataset_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
-        model_save_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/best_tuned_lstm_model.pth"
-    
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    
-    # Load dataset
     dataset = torch.load(dataset_path, weights_only=True)
     encoder_data = dataset['encoder']
     decoder_data = dataset['decoder']
@@ -339,6 +225,106 @@ def train_with_best_params(study, local=False, dataset_path=None):
     
     train_dataset = Subset(full_dataset, range(0, train_size))
     val_dataset = Subset(full_dataset, range(train_size, train_size + val_size))
+    test_dataset = Subset(full_dataset, range(train_size + val_size, n_total))
+    
+    output.print_dataset_info(train_size, val_size, test_size)
+    
+    return train_dataset, val_dataset, test_dataset
+
+
+def get_results_dir(local=False):
+    """Get the appropriate results directory based on mode."""
+    if local:
+        return os.path.dirname(os.path.abspath(__file__))
+    else:
+        return "/ceph/project/SW6-Group18-Abvaerk/ServerReady"
+
+
+def run_hyperparameter_search(n_trials=50, local=False, dataset_path=None, 
+                              verbose=False):
+    """
+    Run hyperparameter optimization using Optuna.
+    
+    Args:
+        n_trials: Number of trials to run
+        local: Whether running in local mode
+        dataset_path: Path to dataset (optional, auto-detected if None)
+        verbose: Whether to print detailed progress
+    
+    Returns:
+        study: Optuna study object with results
+    """
+    
+    # Setup
+    results_dir = get_results_dir(local)
+    output.print_mode_info(local)
+    
+    # Device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    output.print_device_info(device)
+    
+    # Load dataset
+    train_dataset, val_dataset, _ = load_dataset(dataset_path, local)
+    
+    # Create Optuna study
+    study_name = f"lstm_tuning_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    study = optuna.create_study(
+        study_name=study_name,
+        direction='minimize',
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10),
+        sampler=optuna.samplers.TPESampler(seed=42)
+    )
+    
+    output.print_tuning_start(n_trials)
+    
+    if verbose:
+        output.print_verbose_mode()
+    
+    # Optimize
+    study.optimize(
+        lambda trial: objective(trial, train_dataset, val_dataset, device, 
+                              local, verbose),
+        n_trials=n_trials,
+        show_progress_bar=True
+    )
+    
+    # Print results
+    output.print_tuning_complete()
+    output.print_best_trial(study.best_trial)
+    
+    # Save best parameters as JSON
+    best_params_file = os.path.join(results_dir, f"{study_name}_best_params.json")
+    with open(best_params_file, 'w') as f:
+        json.dump(study.best_trial.params, f, indent=2)
+    output.print_best_params_saved(best_params_file)
+    
+    return study
+
+
+def train_with_best_params(study, local=False, dataset_path=None):
+    """
+    Train a final model using the best hyperparameters found.
+    
+    Args:
+        study: Optuna study object with completed trials
+        local: Whether running in local mode
+        dataset_path: Path to dataset (optional)
+    
+    Returns:
+        model: Trained model
+        config: Configuration used
+    """
+    
+    # Setup paths
+    results_dir = get_results_dir(local)
+    model_save_path = os.path.join(results_dir, "best_tuned_lstm_model.pth")
+    
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # Load dataset
+    train_dataset, val_dataset, _ = load_dataset(dataset_path, local)
+    train_size = len(train_dataset)
+    val_size = len(val_dataset)
     
     # Create config with best parameters
     config = Config()
@@ -352,22 +338,19 @@ def train_with_best_params(study, local=False, dataset_path=None):
     config.device = device
     config.epochs = 100  # Train longer for final model
     
-    print("\n" + "=" * 70)
-    print("TRAINING FINAL MODEL WITH BEST HYPERPARAMETERS")
-    print("=" * 70)
-    print("\nHyperparameters:")
-    for key, value in best_params.items():
-        print(f"  {key}: {value}")
-    print()
+    output.print_final_model_header()
+    output.print_final_model_hyperparameters(best_params)
     
     # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, 
+                            shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, 
+                          shuffle=False)
     
     # Train final model
     best_val_loss, model = train_model(
         config, train_loader, val_loader, train_size, val_size, 
-        device, trial=None, max_epochs=config.epochs
+        device, trial=None, max_epochs=config.epochs, verbose=True
     )
     
     # Save final model
@@ -378,50 +361,6 @@ def train_with_best_params(study, local=False, dataset_path=None):
         'val_loss': best_val_loss,
     }, model_save_path)
     
-    print(f"\nFinal model saved to: {model_save_path}")
-    print(f"Final validation loss: {best_val_loss:.6f}")
+    output.print_final_model_saved(model_save_path, best_val_loss)
     
     return model, config
-
-
-def main():
-    parser = argparse.ArgumentParser(description='LSTM Hyperparameter Tuning with Optuna')
-    parser.add_argument('--local', action='store_true', 
-                       help='Use local relative paths instead of server paths')
-    parser.add_argument('--n_trials', type=int, default=50,
-                       help='Number of trials for hyperparameter search (default: 50)')
-    parser.add_argument('--dataset', type=str, default=None,
-                       help='Path to dataset.pt file (optional)')
-    parser.add_argument('--train_final', action='store_true',
-                       help='Train final model with best parameters after tuning')
-    parser.add_argument('--quick', action='store_true',
-                       help='Quick test run with only 10 trials')
-    parser.add_argument('--verbose', action='store_true',
-                       help='Show detailed training progress (helpful for debugging)')
-    
-    args = parser.parse_args()
-    
-    # Adjust trials for quick test
-    n_trials = 10 if args.quick else args.n_trials
-    
-    # Run hyperparameter search
-    study = run_hyperparameter_search(
-        n_trials=n_trials,
-        local=args.local,
-        dataset_path=args.dataset,
-        verbose=args.verbose
-    )
-    
-    # Optionally train final model
-    if args.train_final:
-        print("\n" + "=" * 70)
-        train_with_best_params(study, local=args.local, dataset_path=args.dataset)
-    else:
-        print("\n" + "=" * 70)
-        print("To train a final model with the best parameters, run:")
-        print(f"  python HyperparameterTuning.py {'--local' if args.local else ''} --train_final")
-        print("=" * 70)
-
-
-if __name__ == "__main__":
-    main()

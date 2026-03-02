@@ -8,7 +8,7 @@ from LSTM.LSTMMain import LSTMMain as train_model
 def RunTuning(local=False, n_trials=50, dataset_path=None, verbose=False):
     print("Starting hyperparameter tuning...")
 
-    study = run_hyperparameter_search(
+    study = hptmain(
         n_trials=n_trials,
         local=local,
         dataset_path=dataset_path,
