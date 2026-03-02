@@ -1,74 +1,38 @@
 from pathlib import Path
 import torch
 from torch import nn
-from torch.utils.data import Subset, TensorDataset, DataLoader, random_split
-import matplotlib.pyplot as plt
+from torch.utils.data import Subset, TensorDataset, DataLoader
 import numpy as np
 from tqdm import tqdm
 import shutil
+
+import sys
+import os
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from LSTMModel import LSTMForecast, Config
+from EnsembleConfig import DATASET_PATH, ENSEMBLE_SAVE_DIR, BATCH_SIZE, EPOCHS
 
 
-# -----------------------------
-# Paths relative to project root
-# -----------------------------
-project_root = Path(__file__).parent.parent.parent
-dataset_path = project_root / "ServerReady" / "Data" / "dataset.pt"
-ensemble_save_dir = project_root / "ServerReady" / "Models" / "EnsembleModel"
-plot_path = project_root / "ServerReady" / "Plots" / "uncertainty_plot.png"
-
-# -----------------------------
-# Device and batch config
-# -----------------------------
-device = "cuda" if torch.cuda.is_available() else "cpu"
-batch_size = 64
-ensemble_size = 1
-
-#This function runs the ensemble model that has inherent model uncertainty
-def UncertaintyQuantification():
-    #
-
-    #Load dataset
-    dataset = _DataLoader()
-
-    trainLoader, valLoader, testLoader = _DatasetSplit(dataset)
-
-    # Train Ensemble
-    print("=== Training ensemble ===")
-    model_paths = _TrainEnsemble(
-        n_models=ensemble_size,
-        train_loader=trainLoader,
-        val_loader=valLoader,
-        device=device,
-        save_dir=ensemble_save_dir
-    )
-    print("Ensemble training complete.")
-
-    # Load Ensemble Models
-    models = _LoadEnsembleModels(ensemble_save_dir, device)
-    print(f"Loaded {len(models)} ensemble models.")
-
-
-    _EvaluateModel(testLoader, models, None, device)
-    
-#This part is all private functions
 def _DataLoader():
     #
 
     # Create directories if they don't exist
-    if ensemble_save_dir.exists():
-        shutil.rmtree(ensemble_save_dir)  # delete folder and all contents
-    ensemble_save_dir.mkdir(parents=True, exist_ok=True)
-    plot_path.parent.mkdir(parents=True, exist_ok=True)
+    if ENSEMBLE_SAVE_DIR.exists():
+        shutil.rmtree(ENSEMBLE_SAVE_DIR)  # delete folder and all contents
+    ENSEMBLE_SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
     # Load dataset
-    dataset = torch.load(dataset_path)
+    dataset = torch.load(DATASET_PATH)
 
     #Create dataset
     return TensorDataset(
         dataset['encoder'],
         dataset['decoder'],
         dataset['target'])
+
 
 def _DatasetSplit(dataset):
     # Split dataset into train/val/test
@@ -84,83 +48,12 @@ def _DatasetSplit(dataset):
     test_dataset = Subset(dataset, range(train_size + val_size, n_total))
 
     
-    trainLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    valLoader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    testLoader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    trainLoader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    valLoader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    testLoader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     return trainLoader, valLoader, testLoader
 
-def _EvaluateModel(test_loader, models, target_scaler, device):
-    #
-
-    def _Plot():
-        #
-
-        # Plot Predictions with Uncertainty
-        plt.figure(figsize=(14,5))
-
-        plt.plot(time_steps, targets_week, label="Actual abvaerk")
-        plt.plot(time_steps, mean_preds_week, label="Predicted mean")
-
-        plt.fill_between(
-            time_steps,
-            mean_preds_week - 2 * std_preds_week,
-            mean_preds_week + 2 * std_preds_week,
-            alpha=0.3,
-            label="±2 std (uncertainty)"
-        )
-
-        plt.xlabel("Time Steps)")
-        plt.ylabel("abvaerk")
-        plt.title(f"Ensemble LSTM Forecast (One Week with Uncertainty for week {week_index+1})")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(plot_path)
-        plt.close()
-
-        print(f"Plot saved to {plot_path}")
-        print("Done.")
-
-    # -----------------------------
-    # Run Ensemble on Test Set
-    # -----------------------------
-    meanPredictions, stdPredictions, targets = [], [], []
-
-    for enc, dec, tgt in test_loader:
-        enc, dec = enc.to(device), dec.to(device)
-        meanPredictions2, stdPredictions2 = _EnsemblePredict(models, enc, dec)
-
-        meanPredictions.append(meanPredictions2)
-        stdPredictions.append(stdPredictions2)
-        targets.append(tgt)
-
-    # Concatenate all batches
-    meanPredictions = torch.cat(meanPredictions, dim=0).numpy().flatten()
-    stdPredictions = torch.cat(stdPredictions, dim=0).numpy().flatten()
-    targets = torch.cat(targets, dim=0).numpy().flatten()
-
-    # -----------------------------
-    # Select ONE WEEK of data
-    # -----------------------------
-
-    # choose which week (0 = first week)
-    week_index = 1
-
-    start = week_index * 168
-    end = start + 168
-
-    # safety check in case dataset is smaller
-    end = min(end, len(meanPredictions))
-
-    mean_preds_week = meanPredictions[start:end]
-    std_preds_week = stdPredictions[start:end]
-    targets_week = targets[start:end]
-
-    time_steps = np.arange(len(mean_preds_week))
-
-    print(targets_week[time_steps[0]])
-
-    _Plot()
 
 def _EnsemblePredict(models, enc, dec):
     preds = []
@@ -177,6 +70,7 @@ def _EnsemblePredict(models, enc, dec):
     std  = preds.std(axis=0)
 
     return mean, std
+
 
 def _LoadEnsembleModels(model_dir, device):
     model_dir = Path(model_dir)
@@ -196,6 +90,7 @@ def _LoadEnsembleModels(model_dir, device):
         models.append(model)
 
     return models
+
 
 def _TrainEnsemble(
     n_models,
@@ -224,7 +119,7 @@ def _TrainEnsemble(
 
         # Initialize model and config
         config = Config()
-        config.epochs=1
+        config.epochs=EPOCHS
         model = LSTMForecast(config).to(device)
 
         criterion = nn.MSELoss()
@@ -287,5 +182,3 @@ def _TrainEnsemble(
         model_paths.append(model_path)
 
     return model_paths
-
-UncertaintyQuantification()

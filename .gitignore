@@ -2,6 +2,8 @@
 /RingkøbingData.csv
 /src/DataSet/dataset.json
 /ServerReady/Data/dataset.pt
+/NewModelFolder/Files/dataset.pt
+/NewModelFolder/Files/RingkøbingData.csv
 
 #LSTM Files ignored
 /src/Files/dataset.json
@@ -13,4 +15,3 @@ __pycache__/
 
 # Virtual environment
 venv/
-/ServerReady/ModelTuning/dataset.pt
