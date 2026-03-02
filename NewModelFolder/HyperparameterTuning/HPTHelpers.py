@@ -173,7 +173,7 @@ def objective(trial: Trial, train_dataset, val_dataset, device,
         return float('inf')
 
 
-def load_dataset(local=False):
+def load_dataset(local=False, filePaths=None):
     """
     Load and split dataset into train/val/test sets.
     
@@ -187,15 +187,8 @@ def load_dataset(local=False):
         test_dataset: Test dataset (not used in tuning)
     """
     # Setup paths
-    if local:
-        # Get the script directory
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        # Go up one level to NewModelFolder, then into Files
-        dataset_path = os.path.join(script_dir, '..', 'Files', 'dataset.pt')
-        dataset_path = os.path.abspath(dataset_path)
-    else:
-        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
-    
+    dataset_path = filePaths[0]
+
     # Load dataset
     output.print_loading_dataset(dataset_path)
     
@@ -239,8 +232,10 @@ def get_results_dir(local=False):
         return "/ceph/project/SW6-Group18-Abvaerk/ServerReady"
 
 
-def run_hyperparameter_search(n_trials=50, local=False, 
-                              verbose=False):
+def run_hyperparameter_search(n_trials=50, 
+                              local=False, 
+                              verbose=False,
+                              filePaths=None):
     """
     Run hyperparameter optimization using Optuna.
     
@@ -254,16 +249,12 @@ def run_hyperparameter_search(n_trials=50, local=False,
         study: Optuna study object with results
     """
     
-    # Setup
-    results_dir = get_results_dir(local)
-    output.print_mode_info(local)
-    
     # Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     output.print_device_info(device)
     
     # Load dataset
-    train_dataset, val_dataset, _ = load_dataset(local)
+    train_dataset, val_dataset, _ = load_dataset(local, filePaths)
     
     # Create Optuna study
     study_name = f"lstm_tuning_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -293,19 +284,11 @@ def run_hyperparameter_search(n_trials=50, local=False,
     
     # Save best parameters as JSON
     # Determine where to save/load the hyperparameter JSON
-    if local:
-        # Get the script directory (HyperparameterTuning folder)
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        # Go up to NewModelFolder, then into Files
-        best_params_file = os.path.join(script_dir, '..', 'Files', 'HPTTuning.json')
-        best_params_file = os.path.abspath(best_params_file)
-        os.makedirs(os.path.dirname(best_params_file), exist_ok=True)
-    else:
-        best_params_file = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/HPTTuning.json"
-        print(best_params_file)
-        os.makedirs(os.path.dirname(best_params_file), exist_ok=True)
+
+    best_params_file = filePaths[1]
+    
+    os.makedirs(os.path.dirname(best_params_file), exist_ok=True)
     with open(best_params_file, 'w') as f:
         json.dump(study.best_trial.params, f, indent=2)
-    output.print_best_params_saved(best_params_file)
     
     return study

@@ -8,13 +8,14 @@ from HyperparameterTuning.HPTHelpers import (
 from HyperparameterTuning import HPTOutput as output
 
 
-def hptmain(n_trials, local, verbose):
+def hptmain(n_trials, local, verbose, filePaths):
     """Main entry point for hyperparameter tuning and analysis."""
     # Run hyperparameter search
     study = run_hyperparameter_search(
         n_trials=n_trials,
         local=local,
-        verbose=verbose
+        verbose=verbose,
+        filePaths=filePaths
     )
 
     return study

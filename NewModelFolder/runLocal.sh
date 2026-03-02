@@ -1,7 +1,4 @@
 #!/bin/bash
 
-echo "Running LSTM full pipeline locally..."
+python Main.py --mode full
 
-python main.py --mode full
-
-echo "Done.
