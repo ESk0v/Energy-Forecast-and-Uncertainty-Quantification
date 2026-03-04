@@ -24,6 +24,17 @@ def main(local = False, filePaths = None):
     for col in forecast_features:
         if col in df.columns:
             df[col] = df[col].interpolate(method='linear').bfill().ffill()
+    
+    # -----------------------------
+    # Standardize demand (abvaerk)
+    # -----------------------------
+    demand_mean = df['abvaerk'].mean()
+    demand_std = df['abvaerk'].std()
+
+    print(f"Demand mean: {demand_mean:.4f}")
+    print(f"Demand std:  {demand_std:.4f}")
+
+    df['abvaerk'] = (df['abvaerk'] - demand_mean) / demand_std
 
     # -----------------------------
     # Prepare forecast column lists (week ahead)
@@ -88,7 +99,9 @@ def main(local = False, filePaths = None):
     torch.save({
         'encoder': torch.from_numpy(encoder_data),
         'decoder': torch.from_numpy(decoder_data),
-        'target': torch.from_numpy(target_data)
+        'target': torch.from_numpy(target_data),
+        'demand_mean': demand_mean,
+        'demand_std': demand_std
     }, output_path)
 
     print(f"Dataset saved to {output_path}")

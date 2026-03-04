@@ -40,7 +40,7 @@ def main(local=False, filePaths=None):
     # -----------------------------
     # Load Dataset
     # -----------------------------
-    dataset = torch.load(dataset_path, weights_only=True)
+    dataset = torch.load(dataset_path, weights_only=False)
     encoder_data = dataset['encoder']
     decoder_data = dataset['decoder']
     target_data  = dataset['target']
@@ -67,7 +67,7 @@ def main(local=False, filePaths=None):
     # Model, Loss, Optimizer
     # -----------------------------
     model = LSTMForecast(config).to(config.device)
-    criterion = nn.MSELoss()
+    criterion = nn.GaussianNLLLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
 
@@ -87,8 +87,8 @@ def main(local=False, filePaths=None):
         for enc, dec, tgt in tqdm(train_loader, desc=f"Epoch {epoch}/{config.epochs}"):
             enc, dec, tgt = enc.to(config.device), dec.to(config.device), tgt.to(config.device)
             optimizer.zero_grad()
-            output = model(enc, dec)
-            loss = criterion(output, tgt)
+            mu, log_var = model(enc, dec)
+            loss = criterion(mu, tgt, torch.exp(log_var))  # Use log_var to compute variance
             loss.backward()
             # Gradient clipping to prevent gradient explosion with 168-step sequences
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -104,8 +104,8 @@ def main(local=False, filePaths=None):
         with torch.no_grad():
             for enc, dec, tgt in val_loader:
                 enc, dec, tgt = enc.to(config.device), dec.to(config.device), tgt.to(config.device)
-                output = model(enc, dec)
-                val_loss_epoch += criterion(output, tgt).item() * enc.size(0)
+                mu, log_var = model(enc, dec)
+                val_loss_epoch += criterion(mu, tgt, torch.exp(log_var)).item() * enc.size(0)
         val_loss = val_loss_epoch / val_size
         val_losses.append(val_loss)
 

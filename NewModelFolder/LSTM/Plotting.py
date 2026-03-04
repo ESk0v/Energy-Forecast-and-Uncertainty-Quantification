@@ -85,7 +85,7 @@ def main(local=False):
     # -----------------------------
     # Load dataset and rebuild data loaders
     # -----------------------------
-    dataset      = torch.load(dataset_path, weights_only=True)
+    dataset = torch.load(dataset_path, weights_only=False)
     encoder_data = dataset['encoder']
     decoder_data = dataset['decoder']
     target_data  = dataset['target']
@@ -116,8 +116,8 @@ def main(local=False):
     with torch.no_grad():
         for enc, dec, tgt in test_loader:
             enc, dec = enc.to(config.device), dec.to(config.device)
-            output = model(enc, dec)
-            all_preds_h.append(output.cpu().numpy())
+            mu, log_var = model(enc, dec)
+            all_preds_h.append(mu.cpu().numpy())
             all_targets_h.append(tgt.numpy())
 
     preds_h   = np.concatenate(all_preds_h,   axis=0)
