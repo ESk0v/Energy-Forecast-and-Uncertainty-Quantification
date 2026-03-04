@@ -11,8 +11,7 @@ def main():
     #
 
     #Load dataset
-    dataset = _DataLoader()
-
+    dataset, demand_mean, demand_std = _DataLoader()
     trainLoader, valLoader, testLoader = _DatasetSplit(dataset)
 
     # Train Ensemble
@@ -30,4 +29,4 @@ def main():
     models = _LoadEnsembleModels(ENSEMBLE_SAVE_DIR, DEVICE)
     print(f"Loaded {len(models)} ensemble models.")
 
-    _EvaluateModel(testLoader, models, DEVICE)
+    _EvaluateModel(testLoader, models, DEVICE, demand_mean, demand_std)

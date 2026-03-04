@@ -19,10 +19,6 @@ def LSTMMain(local=False):
 
     if os.path.exists(dataset_path):
         print(f"  Dataset already exists at {dataset_path} — skipping creation.\n")
-    else:
-        print(f"  No dataset found. Creating...")
-        create_dataset(local=local)
-        print()
 
     print(f"[Step 2/3] LSTM Training")
     print("-" * 40)

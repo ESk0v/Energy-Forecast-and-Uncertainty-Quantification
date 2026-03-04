@@ -82,7 +82,7 @@ def main(local=False):
     # -----------------------------
     # Load dataset and rebuild data loaders
     # -----------------------------
-    dataset = torch.load(dataset_path, weights_only=True)
+    dataset = torch.load(dataset_path, weights_only=False)
     encoder_data = dataset['encoder']
     decoder_data = dataset['decoder']
     target_data = dataset['target']
@@ -115,8 +115,8 @@ def main(local=False):
     with torch.no_grad():
         for enc, dec, tgt in test_loader:
             enc, dec = enc.to(config.device), dec.to(config.device)
-            output = model(enc, dec)
-            all_preds_h.append(output.cpu().numpy())
+            mu, log_var = model(enc, dec)
+            all_preds_h.append(mu.cpu().numpy())
             all_targets_h.append(tgt.numpy())
 
     # Shape: (n_samples, 168) — each row is one 168-hour forecast window
@@ -164,8 +164,8 @@ def main(local=False):
     with torch.no_grad():
         for enc, dec, tgt in val_loader:
             enc, dec = enc.to(config.device), dec.to(config.device)
-            output = model(enc, dec)
-            all_preds_val.append(output.cpu())
+            mu, log_var = model(enc, dec)
+            all_preds_val.append(mu.cpu())
             all_targets_val.append(tgt.cpu())
 
     preds_val = torch.cat(all_preds_val).numpy().flatten()
