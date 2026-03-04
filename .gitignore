@@ -3,8 +3,9 @@
 /src/DataSet/dataset.json
 /ServerReady/Data/dataset.pt
 /NewModelFolder/Files/dataset.pt
+/NewModelFolder/Files/dataset.json
 /NewModelFolder/Files/RingkøbingData.csv
-/src/Files/LSTMModels/lstm_model.pth
+NewModelFolder/Models/SingleLSTM/lstm_model.pth
 
 #Pycache and pyc files ignored
 __pycache__/
