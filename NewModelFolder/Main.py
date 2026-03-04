@@ -26,9 +26,6 @@ SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/
 LOCAL_MODELDIR_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
 
-SERVER_PLOTDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Plots"
-LOCAL_PLOTDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Plots")
 
 # ==========================================================
 # DATASET CHECK
@@ -79,7 +76,6 @@ def RunLstm(local=False):
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
         LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
-        LOCAL_PLOTDIR_PATH if local else SERVER_PLOTDIR_PATH,
     ]
 
     ensure_dataset_exists(local=local, dataset_path=filePaths[0])
