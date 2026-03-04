@@ -1,5 +1,7 @@
 import argparse
 import os
+
+from Data.DatasetCreation import main as create_dataset
 from HyperparameterTuning.HPTMain import hptmain
 from LSTM.LSTMMain import LSTMMain as train_model
 from Ensemble.EnsembleMain import main as EnsembleModel
@@ -16,27 +18,33 @@ SERVER_JSON_FOR_HPT_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Fil
 LOCAL_JSON_FOR_HPT_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Files", "HPTTuning.json")
 
+SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/RingKøbingData.csv"
+LOCAL_RINGKØBING_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "Files", "RingKøbingData.csv")
+
+SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
+LOCAL_MODELDIR_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
+
 # ==========================================================
 # DATASET CHECK
 # ==========================================================
 
-def ensure_dataset_exists(dataset_path: str):
+def ensure_dataset_exists(local=False, dataset_path=None):
     print("Checking dataset existence...")
-    print(f"Expected dataset path: {dataset_path}")
 
     if os.path.exists(dataset_path):
-        print("Dataset found.\n")
-        return
+        print("Dataset exists.")
+        
+    else:
+        print("Dataset not found, Creating a new dataset")
 
-    print("Dataset NOT found.")
+        filePaths = [
+            LOCAL_RINGKØBING_PATH if local else SERVER_RINGKØBING_PATH,
+            LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH
+        ]
 
-    # Future option:
-    # create_dataset(dataset_path)
-
-    raise FileNotFoundError(
-        f"Dataset not found at {dataset_path}. "
-        f"Please create dataset before training."
-    )
+        create_dataset(local=local, filePaths=filePaths)
 
 def RunTuning(local=False, n_trials=50, verbose=False):
     #Start the Tuning part
@@ -47,7 +55,7 @@ def RunTuning(local=False, n_trials=50, verbose=False):
         LOCAL_JSON_FOR_HPT_PATH if local else SERVER_JSON_FOR_HPT_PATH
     ]
     #Check if the dataset exist
-    #ensure_dataset_exists(filePaths)
+    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
 
     #Run the HyperparameterTuning
     study = hptmain(
@@ -63,11 +71,19 @@ def RunTuning(local=False, n_trials=50, verbose=False):
 
 def RunLstm(local=False):
     print("Starting LSTM training...")
-    train_model(local=local)  # actually runs the training
+    
+    filePaths = [
+        LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
+        LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
+    ]
+
+    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
+    
+    train_model(local=local, filePaths=filePaths)
     print("Finished LSTM training.")
 
 
-def RunEnsemble():
+def RunEnsemble(local=False):
     print("Starting ensemble...")
     EnsembleModel()
     print("Finished ensemble.")

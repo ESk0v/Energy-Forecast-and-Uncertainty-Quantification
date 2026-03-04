@@ -130,7 +130,7 @@ def _TrainEnsemble(
 
         best_val_loss = float("inf")
         epochs_no_improve = 0
-        patience = 50
+        patience = 30
 
         for epoch in range(1, config.epochs + 1):
             model.train()
