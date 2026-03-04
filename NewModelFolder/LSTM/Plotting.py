@@ -27,29 +27,35 @@ DATASET_START = pd.Timestamp("2023-01-01 01:00")
 ENCODER_HISTORY = 168  # must match DatasetCreation.py
 
 
-def main(local=False):
+def main(local=False, filePaths=None):
     """
     Generate all evaluation plots from a trained model checkpoint.
 
     Args:
-        local: If True, use relative paths. If False, use server paths.
+        local:     If True, use relative paths (standalone fallback).
+        filePaths: List of [dataset_path, model_dir, plot_dir].
+                   When called from Main.py this is always provided.
+                   When run standalone (--local) it is derived here.
     """
 
     # -----------------------------
     # Paths
     # -----------------------------
-    if local:
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
-        model_dir = os.path.join(base_dir, "Models", "SingleLSTM")
-        plot_dir = os.path.join(base_dir, "Plots")
-        print(f"Running in LOCAL mode (plots → {plot_dir})")
+    if filePaths is not None:
+        # Propagated from Main.py — use as-is
+        dataset_path = filePaths[0]
+        model_dir    = filePaths[1]
+        plot_dir     = filePaths[2]
     else:
-        base_dir = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder"
+        # Standalone fallback (python3 Plotting.py --local)
+        base_dir     = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
-        model_dir = os.path.join(base_dir, "Models", "SingleLSTM")
-        plot_dir = os.path.join(base_dir, "Plots")
-        print(f"Running in SERVER mode (plots → {plot_dir})")
+        model_dir    = os.path.join(base_dir, "Models", "SingleLSTM")
+        plot_dir     = os.path.join(base_dir, "Plots")
+
+    print(f"Plotting — dataset : {dataset_path}")
+    print(f"Plotting — model   : {model_dir}")
+    print(f"Plotting — output  : {plot_dir}")
 
     os.makedirs(plot_dir, exist_ok=True)
     train_val_plot_path  = os.path.join(plot_dir, "train_val_loss.png")

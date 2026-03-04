@@ -15,7 +15,7 @@ def LSTMMain(local=False, filePaths=None):
 
     print(f"[Step 3/4] Evaluation Plotting")
     print("-" * 40)
-    generate_plots(local=local)
+    generate_plots(local=local, filePaths=filePaths)
 
     print(f"\n{'='*60}")
     print(f"  Pipeline complete.")
