@@ -26,6 +26,10 @@ SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/
 LOCAL_MODELDIR_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
 
+SERVER_PLOTDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Plots"
+LOCAL_PLOTDIR_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "Plots")
+
 # ==========================================================
 # DATASET CHECK
 # ==========================================================
@@ -75,6 +79,7 @@ def RunLstm(local=False):
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
         LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
+        LOCAL_PLOTDIR_PATH if local else SERVER_PLOTDIR_PATH,
     ]
 
     ensure_dataset_exists(local=local, dataset_path=filePaths[0])
@@ -92,6 +97,10 @@ def RunEnsemble(local=False):
 def Main():
     parser = argparse.ArgumentParser(description="LSTM Pipeline Controller")
 
+    # --mode tune      → run only hyperparameter tuning (Optuna)
+    # --mode train     → run only LSTM training + evaluation plots
+    # --mode ensemble  → run only the ensemble model
+    # --mode full      → run tuning → training → ensemble in sequence
     parser.add_argument(
         "--mode",
         type=str,
@@ -100,8 +109,11 @@ def Main():
         help="Which part of the pipeline to run"
     )
 
+    # --local          → use relative local paths instead of server paths (for local testing)
     parser.add_argument("--local", action="store_true", help="Use local paths")
+    # --verbose        → enable verbose logging output during tuning
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    # --n_trials <int> → number of Optuna trials for hyperparameter tuning (default: 50)
     parser.add_argument("--n_trials", type=int, default=50, help="Number of trials for tuning")
 
     args = parser.parse_args()
