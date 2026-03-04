@@ -21,12 +21,12 @@ def main(local=False):
         # Define project base directory
         BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-        csv_file = os.path.join(BASE_DIR, "Files", "Ringkøbing.csv")
+        csv_file = os.path.join(BASE_DIR, "Files", "RingkøbingData.csv")
         output_path = os.path.join(BASE_DIR, "Files", "dataset.pt")
         print("Running in LOCAL mode (relative paths)")
     else:
-        csv_file = "/ceph/project/SW6-Group18-Abvaerk/RingkøbingData.csv"
-        output_path = "/ceph/project/SW6-Group18-Abvaerk/ServerReady/dataset.pt"
+        csv_file = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder//Files/RingkøbingData.csv"
+        output_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
         print("Running in SERVER mode (absolute paths)")
 
     # -----------------------------
