@@ -122,6 +122,16 @@ def main(local=False):
 
     preds_h   = np.concatenate(all_preds_h,   axis=0)
     targets_h = np.concatenate(all_targets_h, axis=0)
+
+    # -----------------------------
+    # Rescale predictions & targets
+    # -----------------------------
+    demand_mean = dataset["demand_mean"]
+    demand_std  = dataset["demand_std"]
+
+    preds_h   = preds_h * demand_std + demand_mean
+    targets_h = targets_h * demand_std + demand_mean
+
     n_test_samples       = preds_h.shape[0]
     test_start_global_idx = train_size + val_size
 
