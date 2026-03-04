@@ -45,7 +45,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
     )
     
     # Early stopping
-    patience = 5  # Reduced for hyperparameter tuning
+    patience = 10  # Reduced for hyperparameter tuning
     best_val_loss = np.inf
     epochs_no_improve = 0
     best_model_state = None
@@ -163,7 +163,7 @@ def objective(trial: Trial, train_dataset, val_dataset, device,
         # Train model with early stopping
         best_val_loss, _ = train_model(
             config, train_loader, val_loader, train_size, val_size, 
-            device, trial=trial, max_epochs=1, verbose=verbose
+            device, trial=trial, max_epochs=50, verbose=verbose
         )
         
         return best_val_loss

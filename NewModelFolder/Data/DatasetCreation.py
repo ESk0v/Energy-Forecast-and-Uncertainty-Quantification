@@ -2,42 +2,16 @@ import pandas as pd
 import numpy as np
 import torch
 import argparse
-import os
 from tqdm import tqdm
 
 
-def main(local=False):
-    """
-    Create the dataset from the CSV file and save it as a .pt file.
+def main(local = False, filePaths = None):
+    csv_file = filePaths[0]
+    output_path = filePaths[1]
 
-    Args:
-        local: If True, use relative paths. If False, use server paths.
-    """
-
-    # -----------------------------
-    # Paths
-    # -----------------------------
-    if local:
-        # Define project base directory
-        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
-        csv_file = os.path.join(BASE_DIR, "Files", "RingkøbingData.csv")
-        output_path = os.path.join(BASE_DIR, "Files", "dataset.pt")
-        print("Running in LOCAL mode (relative paths)")
-    else:
-        csv_file = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder//Files/RingkøbingData.csv"
-        output_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
-        print("Running in SERVER mode (absolute paths)")
-
-    # -----------------------------
-    # Config
-    # -----------------------------
     encoder_history = 168  # 1 week of past data
     forecast_length = 168  # 1 week forecast
 
-    # -----------------------------
-    # Load CSV
-    # -----------------------------
     df = pd.read_csv(csv_file, parse_dates=["dateTime"])
     print(f"Loaded {len(df)} rows.")
 

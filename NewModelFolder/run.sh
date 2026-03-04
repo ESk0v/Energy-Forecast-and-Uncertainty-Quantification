@@ -26,4 +26,4 @@
 # Activate virtual environment
 cd /ceph/project/SW6-Group18-Abvaerk
 source /ceph/project/SW6-Group18-Abvaerk/.venv/bin/activate
-python NewModelFolder/Main.py --mode full --n_trials 1
+python NewModelFolder/Main.py --mode full --n_trials 50

@@ -8,7 +8,7 @@ from tqdm import tqdm
 from LSTMModel import Config, LSTMForecast
 
 
-def main(local=False):
+def main(local=False, filePaths=None):
     """
     Train the LSTM model on the dataset and save the best checkpoint.
 
@@ -19,15 +19,8 @@ def main(local=False):
     # -----------------------------
     # Paths
     # -----------------------------
-    if local:
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
-        model_dir = os.path.join(base_dir, "Models", "SingleLSTM")
-        print("Running in LOCAL mode (relative paths)")
-    else:
-        dataset_path = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/dataset.pt"
-        model_dir = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
-        print("Running in SERVER mode (absolute paths)")
+    dataset_path = filePaths[0]
+    model_dir = filePaths[1]
 
     os.makedirs(model_dir, exist_ok=True)
 
