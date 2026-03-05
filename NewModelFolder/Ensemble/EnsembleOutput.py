@@ -5,10 +5,9 @@ from scipy.special import erf
 from pathlib import Path
 
 from .EnsembleHelpers import _EnsemblePredict
-from .EnsembleConfig import PLOT_DIR
 
 
-def _EvaluateModel(test_loader, models, device, demand_mean, demand_std):
+def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, plot_dir):
     """
     Runs ensemble evaluation with:
     - Mean prediction
@@ -79,7 +78,8 @@ def _EvaluateModel(test_loader, models, device, demand_mean, demand_std):
         stdPredictions,
         targets_rescaled,
         epistemicPredictions,
-        aleatoricPredictions
+        aleatoricPredictions,
+        plot_dir
     )
 
 
@@ -97,21 +97,23 @@ def _GeneratePlots(
     stdPredictions,
     targets,
     epistemicPredictions,
-    aleatoricPredictions
+    aleatoricPredictions,
+    plot_dir
 ):
-    _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week, week_index)
-    _PlotCalibration(meanPredictions, stdPredictions, targets)
-    #_PlotResiduals(meanPredictions, targets)
-    #_PlotUncertaintyHistogram(stdPredictions)
-    #_PlotPredictionVsActual(meanPredictions, targets)
-    #_PlotUncertaintyVsError(meanPredictions, stdPredictions, targets)
+    _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week, week_index, plot_dir)
+    _PlotCalibration(meanPredictions, stdPredictions, targets, plot_dir)
+    #_PlotResiduals(meanPredictions, targets, plot_dir)
+    #_PlotUncertaintyHistogram(stdPredictions, plot_dir)
+    #_PlotPredictionVsActual(meanPredictions, targets, plot_dir)
+    #_PlotUncertaintyVsError(meanPredictions, stdPredictions, targets, plot_dir)
 
 
 # ============================================================
 # INDIVIDUAL PLOTS
 # ============================================================
 
-def _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week, week_index):
+# Week forecast with uncertainty
+def _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week, week_index, plot_dir):
     """
     Plots one-week forecast with uncertainty.
     Predictions and std are assumed to be already in MW.
@@ -136,87 +138,18 @@ def _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week,
     plt.legend()
     plt.tight_layout()
 
-    save_path = PLOT_DIR / f"week_forecast_ensemble_week{week_index+1}.png"
+    plot_dir = Path(plot_dir)
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    save_path = plot_dir / f"week_forecast_ensemble_week{week_index+1}.png"
+    
     plt.savefig(save_path)
     plt.close()
 
     print(f"Saved week forecast plot to {save_path}")
 
 
-# --- Residuals over time ---
-def _PlotResiduals(meanPredictions, targets):
-    residuals = targets - meanPredictions
-
-    plt.figure(figsize=(10,5))
-    plt.plot(residuals)
-    plt.title("Residuals over time")
-    plt.xlabel("Time step")
-    plt.ylabel("Error (target - prediction, MW)")
-    plt.tight_layout()
-
-    save_path = PLOT_DIR / "residuals_ensemble.png"
-    plt.savefig(save_path)
-    plt.close()
-
-    print(f"Saved residual plot to {save_path}")
-
-
-# --- Histogram of predictive uncertainty ---
-def _PlotUncertaintyHistogram(stdPredictions):
-    plt.figure(figsize=(8,5))
-    plt.hist(stdPredictions, bins=50)
-    plt.title("Distribution of Predictive Uncertainty (std, MW)")
-    plt.xlabel("Standard deviation (MW)")
-    plt.ylabel("Frequency")
-    plt.tight_layout()
-
-    save_path = PLOT_DIR / "uncertainty_histogram.png"
-    plt.savefig(save_path)
-    plt.close()
-
-    print(f"Saved uncertainty histogram to {save_path}")
-
-
-# --- Prediction vs Actual scatter ---
-def _PlotPredictionVsActual(meanPredictions, targets):
-    plt.figure(figsize=(6,6))
-    plt.scatter(targets, meanPredictions, alpha=0.3)
-    plt.plot([targets.min(), targets.max()], [targets.min(), targets.max()], linestyle="--")
-    plt.xlabel("Actual values (MW)")
-    plt.ylabel("Predicted values (MW)")
-    plt.title("Prediction vs Actual")
-    plt.tight_layout()
-
-    save_path = PLOT_DIR / "prediction_vs_actual.png"
-    plt.savefig(save_path)
-    plt.close()
-
-    print(f"Saved prediction vs actual plot to {save_path}")
-
-
-# --- Uncertainty vs Error ---
-def _PlotUncertaintyVsError(meanPredictions, stdPredictions, targets):
-    errors = np.abs(targets - meanPredictions)
-
-    plt.figure(figsize=(6,5))
-    plt.scatter(stdPredictions, errors, alpha=0.3)
-    plt.xlabel("Predicted uncertainty (std, MW)")
-    plt.ylabel("Absolute error (MW)")
-    plt.title("Uncertainty vs Prediction Error")
-    plt.tight_layout()
-
-    save_path = PLOT_DIR / "uncertainty_vs_error.png"
-    plt.savefig(save_path)
-    plt.close()
-
-    print(f"Saved uncertainty vs error plot to {save_path}")
-
-
-# ============================================================
 # Calibration Plot
-# ============================================================
-
-def _PlotCalibration(meanPredictions, stdPredictions, targets):
+def _PlotCalibration(meanPredictions, stdPredictions, targets, plot_dir):
     """
     Checks empirical coverage of prediction intervals.
     All inputs are in MW.
@@ -242,9 +175,90 @@ def _PlotCalibration(meanPredictions, stdPredictions, targets):
     plt.title("Calibration Curve")
     plt.tight_layout()
 
-    save_path = PLOT_DIR / "calibration_curve.png"
+    plot_dir = Path(plot_dir)
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    save_path = plot_dir / "calibration_curve.png"
+
     plt.savefig(save_path)
     plt.close()
 
     print(f"Saved calibration curve to {save_path}")
     print("stdPredictions min/max:", stdPredictions.min(), stdPredictions.max())
+
+
+# --- Residuals over time ---
+def _PlotResiduals(meanPredictions, targets, plot_dir):
+    residuals = targets - meanPredictions
+
+    plt.figure(figsize=(10,5))
+    plt.plot(residuals)
+    plt.title("Residuals over time")
+    plt.xlabel("Time step")
+    plt.ylabel("Error (target - prediction, MW)")
+    plt.tight_layout()
+
+
+    plot_dir = Path(plot_dir)
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    save_path = plot_dir / "residuals_ensemble.png"
+    plt.savefig(save_path)
+    plt.close()
+
+    print(f"Saved residual plot to {save_path}")
+
+
+# --- Histogram of predictive uncertainty ---
+def _PlotUncertaintyHistogram(stdPredictions, plot_dir):
+    plt.figure(figsize=(8,5))
+    plt.hist(stdPredictions, bins=50)
+    plt.title("Distribution of Predictive Uncertainty (std, MW)")
+    plt.xlabel("Standard deviation (MW)")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+
+    plot_dir = Path(plot_dir)
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    save_path = plot_dir / "uncertainty_histogram.png"
+    plt.savefig(save_path)
+    plt.close()
+
+    print(f"Saved uncertainty histogram to {save_path}")
+
+
+# --- Prediction vs Actual scatter ---
+def _PlotPredictionVsActual(meanPredictions, targets, plot_dir):
+    plt.figure(figsize=(6,6))
+    plt.scatter(targets, meanPredictions, alpha=0.3)
+    plt.plot([targets.min(), targets.max()], [targets.min(), targets.max()], linestyle="--")
+    plt.xlabel("Actual values (MW)")
+    plt.ylabel("Predicted values (MW)")
+    plt.title("Prediction vs Actual")
+    plt.tight_layout()
+
+    plot_dir = Path(plot_dir)
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    save_path = plot_dir / "prediction_vs_actual.png"
+    plt.savefig(save_path)
+    plt.close()
+
+    print(f"Saved prediction vs actual plot to {save_path}")
+
+
+# --- Uncertainty vs Error ---
+def _PlotUncertaintyVsError(meanPredictions, stdPredictions, targets, plot_dir):
+    errors = np.abs(targets - meanPredictions)
+
+    plt.figure(figsize=(6,5))
+    plt.scatter(stdPredictions, errors, alpha=0.3)
+    plt.xlabel("Predicted uncertainty (std, MW)")
+    plt.ylabel("Absolute error (MW)")
+    plt.title("Uncertainty vs Prediction Error")
+    plt.tight_layout()
+
+    plot_dir = Path(plot_dir)
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    save_path = plot_dir / "uncertainty_vs_error.png"
+    plt.savefig(save_path)
+    plt.close()
+
+    print(f"Saved uncertainty vs error plot to {save_path}")

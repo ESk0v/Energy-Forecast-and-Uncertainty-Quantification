@@ -18,14 +18,21 @@ SERVER_JSON_FOR_HPT_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Fil
 LOCAL_JSON_FOR_HPT_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Files", "HPTTuning.json")
 
-SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/RingKøbingData.csv"
+SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/RingkøbingData.csv"
 LOCAL_RINGKØBING_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Files", "RingKøbingData.csv")
+    os.path.dirname(os.path.abspath(__file__)), "Files", "RingkøbingData.csv")
 
 SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
 LOCAL_MODELDIR_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
 
+SERVER_ENSEMBLE_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/EnsembleModel"
+LOCAL_ENSEMBLE_MODELDIR_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "Models", "EnsembleModel")
+
+SERVER_PLOTDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Plots"
+LOCAL_PLOTDIR_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "Plots")
 
 # ==========================================================
 # DATASET CHECK
@@ -86,7 +93,17 @@ def RunLstm(local=False):
 
 def RunEnsemble(local=False):
     print("Starting ensemble...")
-    EnsembleModel()
+
+    filePaths = [
+        LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
+        LOCAL_ENSEMBLE_MODELDIR_PATH if local else SERVER_ENSEMBLE_MODELDIR_PATH,
+        LOCAL_PLOTDIR_PATH if local else SERVER_PLOTDIR_PATH
+    ]
+
+    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
+
+    EnsembleModel(local=local, filePaths=filePaths)
+
     print("Finished ensemble.")
 
 
@@ -127,7 +144,7 @@ def Main():
         )
 
     elif args.mode == "ensemble":
-        RunEnsemble()
+        RunEnsemble(local=args.local)
 
     elif args.mode == "full":
         print("RUNNING TUNING")
@@ -142,7 +159,7 @@ def Main():
         RunLstm(local=args.local)
 
         print("RUNNING ENSEBMLE")
-        RunEnsemble()
+        RunEnsemble(local=args.local)
 
 if __name__ == "__main__":
     Main()
