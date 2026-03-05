@@ -44,7 +44,9 @@ def getModelPath(model_dir):
         except ValueError:
             pass
     next_version = max(existing_versions, default=0) + 1
-    model_save_path = os.path.join(model_dir, f"model_v{next_version}.pth")
+    model_path = os.path.join(model_dir, f"model_v{next_version}")
+    os.makedirs(model_path, exist_ok=True)
+    model_save_path = os.path.join(model_path, f"model_v{next_version}.pth")
     
     return model_save_path, next_version
 
@@ -103,7 +105,7 @@ def RunLstm(local=False, logger=None):
     ]
 
     train_model(filePaths=filePaths, logger=logger)
-    logger.success("Finished LSTM training.")
+    logger.success("Finished LSTM plotting")
 
 def RunEnsemble(local=False, logger=None):
     logger.info("Starting ensemble...")
@@ -128,7 +130,7 @@ def RunEnsemble(local=False, logger=None):
     ]
 
     EnsembleModel(filePaths=filePaths)
-    logger.success("Finished ensemble.")
+    logger.success("Finished Ensemble plotting")
 
 def Main():
     parser = argparse.ArgumentParser(description="LSTM Pipeline Controller")

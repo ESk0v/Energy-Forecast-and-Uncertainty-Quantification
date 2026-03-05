@@ -117,8 +117,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
                 logger.info(f"Early stopping at epoch {epoch}")
                 break
         
-        if epoch % 0 == 0:
-            logger.info(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, Best epoch = {best_epoch}")
+        logger.info(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, Best epoch = {best_epoch}")
     
     # Save final loss curves into the checkpoint
     checkpoint = torch.load(model_save_path)

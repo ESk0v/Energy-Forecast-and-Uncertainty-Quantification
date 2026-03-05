@@ -1,0 +1,15 @@
+2026-03-05 14:55:46 | INFO     | Main                  - [37mLogger initialized. Logging to: logs/Pipeline_20260305_145546.log[0m
+2026-03-05 14:55:46 | INFO     | LSTM                  - [37mLogger initialized. Logging to: logs/Pipeline_20260305_145546.log[0m
+2026-03-05 14:55:46 | INFO     | Ensemble              - [37mLogger initialized. Logging to: logs/Pipeline_20260305_145546.log[0m
+2026-03-05 14:55:46 | INFO     | Hyperparameter Tuning - [37mLogger initialized. Logging to: logs/Pipeline_20260305_145546.log[0m
+2026-03-05 14:55:46 | INFO     | Dataset               - [37mLogger initialized. Logging to: logs/Pipeline_20260305_145546.log[0m
+2026-03-05 14:55:46 | INFO     | Dataset               - [37mChecking dataset existence...[0m
+2026-03-05 14:55:46 | INFO     | Dataset               - [37mDataset exists[0m
+2026-03-05 14:55:46 | INFO     | LSTM                  - [37mStarting LSTM training...[0m
+2026-03-05 14:55:46 | INFO     | LSTM                  - [37mModel will be saved as model_v8.pth[0m
+2026-03-05 14:55:46 | INFO     | LSTM                  - [37mDataset loaded: 13766 training samples, 1720 validation samples[0m
+2026-03-05 14:55:47 | INFO     | LSTM                  - [37mStarting training for 1 epochs...[0m
+2026-03-05 14:57:30 | INFO     | LSTM                  - [37mEpoch 1: Train Loss = 1.8018, Val Loss = 0.2974, Best epoch = 1[0m
+2026-03-05 14:57:30 | SUCCESS  | LSTM                  - [32mTraining complete. Best model saved at epoch 1 (val_loss=0.2974)[0m
+2026-03-05 14:57:30 | SUCCESS  | LSTM                  - [32mLSTM training completed successfully![0m
+2026-03-05 14:57:30 | INFO     | LSTM                  - [37mGenerating plots...[0m

@@ -119,11 +119,9 @@ def _TrainEnsemble(
     device,
     save_dir,
     base_seed=1000,
+    logger=None
 ):
-    """
-    Train an ensemble of encoder-decoder LSTM models with different random seeds.
-    """
-
+    
     save_dir = Path(save_dir)
     save_dir.mkdir(exist_ok=True, parents=True)
 
@@ -131,7 +129,7 @@ def _TrainEnsemble(
 
     for i in range(n_models):
         seed = base_seed + i
-        print(f"\n=== Training ensemble model {i+1}/{n_models} (seed={seed}) ===")
+        logger.info(f"Training ensemble model {i+1}/{n_models} with seed {seed}")
 
         # Set seeds for reproducibility
         torch.manual_seed(seed)
@@ -156,7 +154,7 @@ def _TrainEnsemble(
             model.train()
             epoch_loss = 0
 
-            for enc, dec, tgt in tqdm(train_loader, desc=f"Epoch {epoch}/{config.epochs}"):
+            for enc, dec, tgt in train_loader:
                 enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
 
                 optimizer.zero_grad()
@@ -182,7 +180,8 @@ def _TrainEnsemble(
             val_loss = val_loss_epoch / len(val_loader.dataset)
             scheduler.step(val_loss)
 
-            print(f"Model {i+1} | Epoch {epoch} | Train {train_loss:.4f} | Val {val_loss:.4f}")
+            if epoch % 5 == 0 or epoch == 1:
+                logger.info(f"Model {i+1} | Epoch {epoch} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
 
             # Save best model
             if val_loss < best_val_loss:
@@ -196,10 +195,9 @@ def _TrainEnsemble(
             else:
                 epochs_no_improve += 1
                 if epochs_no_improve >= patience:
-                    print(f"Early stopping at epoch {epoch}")
                     break
 
-        print(f"Saved ensemble model to {model_path}")
+        logger.success(f"Finished training model at epoch: {epoch}")
         model_paths.append(model_path)
 
     return model_paths

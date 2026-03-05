@@ -1,0 +1,19 @@
+2026-03-05 15:23:47 | INFO     | Main                  - [37mLogger initialized. Logging to: logs/Pipeline_20260305_152347.log[0m
+2026-03-05 15:23:47 | INFO     | LSTM                  - [37mLogger initialized. Logging to: logs/Pipeline_20260305_152347.log[0m
+2026-03-05 15:23:47 | INFO     | Ensemble              - [37mLogger initialized. Logging to: logs/Pipeline_20260305_152347.log[0m
+2026-03-05 15:23:47 | INFO     | Hyperparameter Tuning - [37mLogger initialized. Logging to: logs/Pipeline_20260305_152347.log[0m
+2026-03-05 15:23:47 | INFO     | Dataset               - [37mLogger initialized. Logging to: logs/Pipeline_20260305_152347.log[0m
+2026-03-05 15:23:47 | INFO     | Dataset               - [37mChecking dataset existence...[0m
+2026-03-05 15:23:47 | INFO     | Dataset               - [37mDataset exists[0m
+2026-03-05 15:23:47 | INFO     | LSTM                  - [37mStarting LSTM training...[0m
+2026-03-05 15:23:47 | INFO     | LSTM                  - [37mModel will be saved as model_v1.pth[0m
+2026-03-05 15:23:47 | INFO     | LSTM                  - [37mDataset loaded: 13766 training samples, 1720 validation samples[0m
+2026-03-05 15:23:47 | INFO     | LSTM                  - [37mStarting training for 1 epochs...[0m
+2026-03-05 15:24:55 | INFO     | LSTM                  - [37mEpoch 1: Train Loss = 75.6264, Val Loss = 13.2594, Best epoch = 1[0m
+2026-03-05 15:24:55 | SUCCESS  | LSTM                  - [32mTraining complete. Best model saved at epoch 1 (val_loss=13.2594)[0m
+2026-03-05 15:24:55 | SUCCESS  | LSTM                  - [32mLSTM training completed successfully![0m
+2026-03-05 15:24:55 | INFO     | LSTM                  - [37mGenerating plots...[0m
+2026-03-05 15:24:55 | INFO     | LSTM                  - [37mCheckpoint loaded (best epoch: 1, val_loss: 13.2594)[0m
+2026-03-05 15:24:58 | INFO     | LSTM                  - [37mGenerating training README...[0m
+2026-03-05 15:24:58 | SUCCESS  | LSTM                  - [32mTraining README successfully generated[0m
+2026-03-05 15:24:58 | INFO     | LSTM                  - [37mGenerating LSTM evaluation plots...[0m

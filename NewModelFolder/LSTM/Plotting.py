@@ -43,7 +43,7 @@ def _find_latest_model(model_dir):
     return os.path.join(run_folder, "model.pth")
 
 
-def main(train_losses=None, val_losses=None, model_save_path=None, logger=None):
+def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_dir=None):
     """
     Generate all evaluation plots from a trained model checkpoint.
 
@@ -61,20 +61,11 @@ def main(train_losses=None, val_losses=None, model_save_path=None, logger=None):
     # -----------------------------
     # Paths — all derived from model_save_path
     # -----------------------------
-    run_dir      = os.path.dirname(model_save_path)           # e.g. .../Models/model_v2/
-    base_dir     = os.path.abspath(os.path.join(run_dir, "..", ".."))  # .../NewModelFolder/
-    dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
+    model_path   = filePaths[1]
+    dataset_path = filePaths[0]
     plot_dir     = os.path.join(run_dir, "Plots")
 
     os.makedirs(plot_dir, exist_ok=True)
-
-    if not os.path.exists(model_save_path):
-        raise FileNotFoundError(f"model not found: {model_save_path}")
-
-    if logger:
-        logger.info(f"Plotting — model   : {model_save_path}")
-        logger.info(f"Plotting — dataset : {dataset_path}")
-        logger.info(f"Plotting — output  : {plot_dir}")
 
     train_val_plot_path  = os.path.join(plot_dir, "train_val_loss.png")
     test_plot_path       = os.path.join(plot_dir, "test_predictions.png")
@@ -82,13 +73,12 @@ def main(train_losses=None, val_losses=None, model_save_path=None, logger=None):
     residuals_plot_path  = os.path.join(plot_dir, "residuals.png")
     horizon_plot_path    = os.path.join(plot_dir, "per_horizon_metrics.png")
 
-
     # -----------------------------
     # Load checkpoint
     # -----------------------------
     # Load checkpoint
     # -----------------------------
-    checkpoint = torch.load(model_save_path, map_location='cpu')
+    checkpoint = torch.load(model_path, map_location='cpu')
     # Use losses passed in from training if available, otherwise read from checkpoint
     if train_losses is None:
         train_losses = checkpoint.get('train_losses', [])

@@ -17,6 +17,8 @@ def LSTMMain(filePaths=None, logger=None):
     # run_dir is the folder containing the .pth file
     run_dir = os.path.dirname(model_save_path)
     os.makedirs(run_dir, exist_ok=True)
+    print(f"Run directory: {run_dir}")
+    print(f"Model will be saved to: {model_save_path}")
 
     # Load and split dataset
     train_dataset, val_dataset, train_size, val_size = load_and_split_dataset(dataset_path)
@@ -43,7 +45,8 @@ def LSTMMain(filePaths=None, logger=None):
     patience = 50
     logger.success("LSTM training completed successfully!")
     logger.info("Generating plots...")
-    generate_plots(train_losses, val_losses, model_save_path, logger)
+
+    generate_plots(train_losses, val_losses, filePaths, logger, run_dir=run_dir)
     logger.info("Generating training README...")
 
     # Generate training README in run_dir
@@ -64,5 +67,4 @@ def LSTMMain(filePaths=None, logger=None):
 
     logger.success("Training README successfully generated")
 
-    # Generate evaluation plots — plots go into run_dir/Plots/
-    generate_plots(train_losses, val_losses, model_save_path, logger)
+
