@@ -128,7 +128,7 @@ def load_dataset(local=False, filePaths=None, logger=None):
     # Setup paths
     dataset_path = filePaths[0]
 
-    dataset = torch.load(dataset_path, weights_only=True)
+    dataset = torch.load(dataset_path, weights_only=False)
     encoder_data = dataset['encoder']
     decoder_data = dataset['decoder']
     target_data = dataset['target']

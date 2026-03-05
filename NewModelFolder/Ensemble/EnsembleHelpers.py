@@ -155,7 +155,7 @@ def _TrainEnsemble(n_models, epochs, train_loader, val_loader, save_dir, config,
             epoch_loss = 0
 
             for enc, dec, tgt in train_loader:
-                enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
+                enc, dec, tgt = enc.to(device).float(), dec.to(device).float(), tgt.to(device).float()
 
                 optimizer.zero_grad()
                 mu, log_var = model(enc, dec)
@@ -172,7 +172,7 @@ def _TrainEnsemble(n_models, epochs, train_loader, val_loader, save_dir, config,
             val_loss_epoch = 0
             with torch.no_grad():
                 for enc, dec, tgt in val_loader:
-                    enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
+                    enc, dec, tgt = enc.to(device).float(), dec.to(device).float(), tgt.to(device).float()
                     mu, log_var = model(enc, dec)
                     loss = criterion(mu, tgt, torch.exp(log_var))
                     val_loss_epoch += loss.item() * enc.size(0)

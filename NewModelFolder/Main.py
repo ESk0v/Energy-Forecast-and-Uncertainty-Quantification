@@ -130,7 +130,7 @@ def RunEnsemble(local=False, epochs=1, n_models=3, logger=None):
         latest_run_dir,
     ]
 
-    EnsembleModel(filePaths=filePaths, epochs=epochs, n_models=n_models)
+    EnsembleModel(filePaths=filePaths, epochs=epochs, n_models=n_models, logger=logger)
     logger.success("Finished Ensemble plotting")
 
 def Main():
@@ -192,7 +192,6 @@ def Main():
         RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, logger=ensembleLogger)
 
     elif args.mode == "full":
-        mainLogger.info("RUNNING TUNING")
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
@@ -200,10 +199,8 @@ def Main():
             logger=mainLogger
         )
 
-        mainLogger.info("RUNNING TRAINING")
         RunLstm(local=args.local, epochs=args.train_epochs, logger=mainLogger)
 
-        mainLogger.info("RUNNING ENSEMBLE")
         RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, logger=mainLogger)
 
 if __name__ == "__main__":

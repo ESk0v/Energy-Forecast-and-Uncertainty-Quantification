@@ -8,7 +8,7 @@ from .EnsembleOutput import _EvaluateModel
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from LSTMModel import Config
 
-def main(filePaths=None, logger=None):
+def main(filePaths=None, epochs=1, n_models=3, logger=None):
 
     # -----------------------------
     # Paths
@@ -27,7 +27,7 @@ def main(filePaths=None, logger=None):
     device = config.device
 
     # Load dataset
-    dataset, demand_mean, demand_std = _DataLoader(dataset_path, ensemble_save_dir)
+    dataset, demand_mean, demand_std = _DataLoader(dataset_path)
     trainLoader, valLoader, testLoader = _DatasetSplit(dataset, batch_size)
 
     # Train Ensemble

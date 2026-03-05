@@ -33,7 +33,7 @@ def _EvaluateModel(test_loader, models, demand_mean, demand_std, device, n_model
     # Run Ensemble on Test Set
     # -----------------------------
     for enc, dec, tgt in test_loader:
-        enc, dec = enc.to(device), dec.to(device)
+        enc, dec = enc.to(device).float(), dec.to(device).float()
 
         mean_real, total_std_real, epistemic_real, aleatoric_real = \
             _EnsemblePredict(models, enc, dec, demand_mean, demand_std)

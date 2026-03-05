@@ -18,12 +18,12 @@
 #   sbatch run.sh 
 #
 # Arguments:
-#   mode        | --mode full       | (tune | train | ensemble | full)  | (Allways relevant)
-#   n_trials    | --n_trials 1      | (Any Number )                     | (Only relevant for tuning)
-#   n_models    | --n_models 5      | (Any Number )                     | (Only relevant for ensemble)
-#   tune_epochs   | --tune_epochs 1  | (Any Number )                     | (Only relevant for tuning)
-#   train_epochs  | --train_epochs 1 | (Any Number )                     | (Only relevant for training)
-#   ensemble_epochs | --ensemble_epochs 1 | (Any Number )                 | (Only relevant for ensemble)
+#   mode            | --mode full         | (tune | train | ensemble | full)  | (Allways relevant)
+#   n_trials        | --n_trials 1        | (Any Number )                     | (Only relevant for tuning)
+#   tune_epochs     | --tune_epochs 1     | (Any Number )                     | (Only relevant for tuning)
+#   train_epochs    | --train_epochs 1    | (Any Number )                     | (Only relevant for training)
+#   n_models        | --n_models 5        | (Any Number )                     | (Only relevant for ensemble)
+#   ensemble_epochs | --ensemble_epochs 1 | (Any Number )                     | (Only relevant for ensemble)
 #
 # ==========================================
 
