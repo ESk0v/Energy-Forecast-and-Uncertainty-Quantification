@@ -6,11 +6,13 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from LSTMModel import LSTMForecast
+from LSTM.GenerateREADME import generate_training_readme
 
 
 def load_and_split_dataset(dataset_path, val_ratio=0.1, test_ratio=0.1):
 
     dataset = torch.load(dataset_path, weights_only=True)
+
     encoder_data = dataset['encoder']
     decoder_data = dataset['decoder']
     target_data = dataset['target']
@@ -97,7 +99,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     
     # Model, Loss, Optimizer
     model = LSTMForecast(config).to(config.device)
-    criterion = nn.MSELoss()
+    criterion = nn.GaussianNLLLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
     
@@ -117,6 +119,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
         train_losses.append(train_loss)
         
         val_loss = validate_epoch(model, val_loader, criterion, config.device, val_size)
+
         val_losses.append(val_loss)
         
         scheduler.step(val_loss)
@@ -142,9 +145,31 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     checkpoint['train_losses'] = train_losses
     checkpoint['val_losses'] = val_losses
     torch.save(checkpoint, model_save_path)
+
     
     if logger:
         logger.success(f"Training complete. Best model saved at epoch {checkpoint['epoch']} "
                       f"(val_loss={checkpoint['val_loss']:.4f})")
-    
-    return best_val_loss, train_losses, val_losses
+
+    print(f"Training complete. Best model saved at epoch {checkpoint['epoch']} "
+          f"(val_loss={checkpoint['val_loss']:.4f}).")
+
+    # Generate training README summarising this run
+    generate_training_readme(
+        plot_dir       = run_dir,
+        model_filename = "model.pth",
+        config         = config,
+        train_size     = train_size,
+        val_size       = val_size,
+        test_size      = test_size,
+        n_total        = n_total,
+        epochs_run     = len(train_losses),
+        best_epoch     = checkpoint['epoch'],
+        best_val_loss  = checkpoint['val_loss'],
+        early_stopped  = epochs_no_improve >= patience,
+        patience       = patience,
+    )
+    print(f"Training README saved to: {os.path.join(run_dir, 'README_Training.md')}")
+
+    return best_val_loss, train_losses, val_losses, run_dir
+

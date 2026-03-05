@@ -1,11 +1,12 @@
 from torch.utils.data import DataLoader
 from LSTMModel import Config
+import os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 from LSTM.Plotting import main as generate_plots
 from LSTM.LSTMTraining import (
     load_and_split_dataset,
     train_model
 )
-
 
 def LSTMMain(filePaths=None, logger=None):    
     # Paths
@@ -28,3 +29,4 @@ def LSTMMain(filePaths=None, logger=None):
     )
 
     generate_plots(train_losses, val_losses, model_save_path, logger)
+

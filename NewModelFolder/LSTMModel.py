@@ -110,7 +110,7 @@ class LSTMForecast(nn.Module):
         # or N for multi-target / quantile forecasting).
         #
         #   ŷ_t = W · h_t + b     where W ∈ ℝ^{output_size × hidden_size}
-        self.fc = nn.Linear(config.hidden_size, config.output_size)
+        self.fc = nn.Linear(config.hidden_size, 2)
         self._init_weights()
 
     def _init_weights(self):
@@ -167,14 +167,21 @@ class LSTMForecast(nn.Module):
                 nn.init.constant_(param.data, 0)
 
     def forward(self, encoder_input, decoder_input):
-        # Run encoder over historical input; discard outputs, keep final hidden & cell states
+        # Encoder
         _, (hidden, cell) = self.encoder_lstm(encoder_input)
 
-        # Seed the decoder with encoder's final state — classic seq2seq context passing
+        # Decoder
         decoder_output, _ = self.decoder_lstm(decoder_input, (hidden, cell))
 
-        # Project decoder hidden states to scalar predictions, remove trailing dim
-        output = self.fc(decoder_output).squeeze(-1)
-        return output
+        # Project to mean and log variance
+        output = self.fc(decoder_output)  # (batch, horizon, 2)
+
+        mu = output[..., 0]
+        log_var = output[..., 1]
+
+        # Clamp for numerical stability
+        log_var = torch.clamp(log_var, min=-10, max=5)
+
+        return mu, log_var
 
 Config.auto_load()

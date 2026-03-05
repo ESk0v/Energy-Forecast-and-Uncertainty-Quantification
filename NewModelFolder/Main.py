@@ -19,13 +19,13 @@ SERVER_JSON_FOR_HPT_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Fil
 LOCAL_JSON_FOR_HPT_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Files", "HPTTuning.json")
 
-SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/RingKøbingData.csv"
+SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Files/RingkøbingData.csv"
 LOCAL_RINGKØBING_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Files", "RingKøbingData.csv")
+    os.path.dirname(os.path.abspath(__file__)), "Files", "RingkøbingData.csv")
 
-SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
+SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models"
 LOCAL_MODELDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
+    os.path.dirname(os.path.abspath(__file__)), "Models")
 
 # ==========================================================
 # DATASET CHECK
@@ -101,20 +101,46 @@ def RunLstm(local=False, logger=None):
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
         modelPath
     ]
-    
+
     train_model(filePaths=filePaths, logger=logger)
     logger.success("Finished LSTM training.")
+    run_dir = train_model(filePaths=filePaths)
 
+    return run_dir
 
-def RunEnsemble(logger=None):
+def RunEnsemble(local=False, run_dir=None, logger=None):
     logger.info("Starting ensemble...")
-    EnsembleModel()
-    logger.success("Finished ensemble.")
 
+    if run_dir is None:
+        # Standalone ensemble run — find the latest model_vN/ folder
+        model_dir = LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH
+        if not os.path.isdir(model_dir):
+            raise FileNotFoundError(f"Model directory does not exist: {model_dir}")
+        existing = [f for f in os.listdir(model_dir)
+                    if os.path.isdir(os.path.join(model_dir, f))
+                    and f.startswith("model_v")]
+        versions = [int(f.replace("model_v", "")) for f in existing
+                    if f.replace("model_v", "").isdigit()]
+        if not versions:
+            raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
+        run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
+
+    filePaths = [
+        LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
+        LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
+        run_dir,
+    ]
+
+    EnsembleModel(filePaths=filePaths)
+    logger.success("Finished ensemble.")
 
 def Main():
     parser = argparse.ArgumentParser(description="LSTM Pipeline Controller")
 
+    # --mode tune      → run only hyperparameter tuning (Optuna)
+    # --mode train     → run only LSTM training + evaluation plots
+    # --mode ensemble  → run only the ensemble model
+    # --mode full      → run tuning → training → ensemble in sequence
     parser.add_argument(
         "--mode",
         type=str,
@@ -123,7 +149,9 @@ def Main():
         help="Which part of the pipeline to run"
     )
 
+    # --local          → use relative local paths instead of server paths (for local testing)
     parser.add_argument("--local", action="store_true", help="Use local paths")
+
     parser.add_argument("--n_trials", type=int, default=50, help="Number of trials for tuning")
 
     args = parser.parse_args()
@@ -153,6 +181,7 @@ def Main():
     elif args.mode == "ensemble":
         RunEnsemble(logger=ensembleLogger)
 
+
     elif args.mode == "full":
         mainLogger.info("RUNNING TUNING")
         RunTuning(
@@ -160,7 +189,6 @@ def Main():
             n_trials=args.n_trials,
             logger=mainLogger
         )
-
 
         mainLogger.info("RUNNING TRAINING")
         RunLstm(local=args.local, logger=mainLogger)

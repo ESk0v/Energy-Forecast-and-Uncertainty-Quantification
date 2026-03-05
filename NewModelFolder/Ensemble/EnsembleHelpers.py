@@ -13,25 +13,23 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from LSTMModel import LSTMForecast, Config
-from .EnsembleConfig import DATASET_PATH, ENSEMBLE_SAVE_DIR, BATCH_SIZE, EPOCHS
+from EnsembleConfig import BATCH_SIZE, EPOCHS
 
 
-def _DataLoader():
-    #
+def _DataLoader(dataset_path):
+    """Load dataset from the given path and return tensors + demand stats."""
+    dataset = torch.load(dataset_path, weights_only=False)
 
-    # Create directories if they don't exist
-    if ENSEMBLE_SAVE_DIR.exists():
-        shutil.rmtree(ENSEMBLE_SAVE_DIR)  # delete folder and all contents
-    ENSEMBLE_SAVE_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Load dataset
-    dataset = torch.load(DATASET_PATH)
-
-    #Create dataset
-    return TensorDataset(
+    tensor_dataset = TensorDataset(
         dataset['encoder'],
         dataset['decoder'],
-        dataset['target'])
+        dataset['target']
+    )
+
+    demand_mean = dataset['demand_mean']
+    demand_std = dataset['demand_std']
+
+    return tensor_dataset, demand_mean, demand_std
 
 
 def _DatasetSplit(dataset):
@@ -55,21 +53,43 @@ def _DatasetSplit(dataset):
     return trainLoader, valLoader, testLoader
 
 
-def _EnsemblePredict(models, enc, dec):
-    preds = []
+def _EnsemblePredict(models, enc, dec, demand_mean, demand_std):
+    #
+    
+    mus = []
+    vars_ = []
 
     for model in models:
         model.eval()
         with torch.no_grad():
-            pred = model(enc, dec)   # shape: (batch, horizon, 1)
-            preds.append(pred.cpu())
+            mu, log_var = model(enc, dec)
+            var = torch.exp(log_var)
 
-    preds = torch.stack(preds, axis=0)  # (n_models, batch, horizon, 1)
+            mus.append(mu.cpu())
+            vars_.append(var.cpu())
 
-    mean = preds.mean(axis=0)
-    std  = preds.std(axis=0)
+    mus = torch.stack(mus, dim=0)
+    vars_ = torch.stack(vars_, dim=0)
 
-    return mean, std
+    # Ensemble mean (normalized space)
+    mean_norm = mus.mean(dim=0)
+
+    # Epistemic variance
+    epistemic_norm = mus.var(dim=0)
+
+    # Aleatoric variance
+    aleatoric_norm = vars_.mean(dim=0)
+
+    total_var_norm = epistemic_norm + aleatoric_norm
+    total_std_norm = torch.sqrt(total_var_norm)
+
+    # Convert back to real MW units
+    mean_real = mean_norm * demand_std + demand_mean
+    total_std_real = total_std_norm * demand_std
+    epistemic_real = torch.sqrt(epistemic_norm) * demand_std
+    aleatoric_real = torch.sqrt(aleatoric_norm) * demand_std
+
+    return mean_real, total_std_real, epistemic_real, aleatoric_real
 
 
 def _LoadEnsembleModels(model_dir, device):
@@ -122,7 +142,7 @@ def _TrainEnsemble(
         config.epochs=EPOCHS
         model = LSTMForecast(config).to(device)
 
-        criterion = nn.MSELoss()
+        criterion = nn.GaussianNLLLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode="min", factor=0.5, patience=3
@@ -140,8 +160,8 @@ def _TrainEnsemble(
                 enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
 
                 optimizer.zero_grad()
-                output = model(enc, dec)
-                loss = criterion(output, tgt)
+                mu, log_var = model(enc, dec)
+                loss = criterion(mu, tgt, torch.exp(log_var))
                 loss.backward()
                 optimizer.step()
 
@@ -155,8 +175,9 @@ def _TrainEnsemble(
             with torch.no_grad():
                 for enc, dec, tgt in val_loader:
                     enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
-                    output = model(enc, dec)
-                    val_loss_epoch += criterion(output, tgt).item() * enc.size(0)
+                    mu, log_var = model(enc, dec)
+                    loss = criterion(mu, tgt, torch.exp(log_var))
+                    val_loss_epoch += loss.item() * enc.size(0)
 
             val_loss = val_loss_epoch / len(val_loader.dataset)
             scheduler.step(val_loss)
