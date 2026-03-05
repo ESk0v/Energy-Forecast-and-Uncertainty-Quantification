@@ -1,8 +1,12 @@
+import sys
 from pathlib import Path
 import os
 from .EnsembleHelpers import _DataLoader, _DatasetSplit, _TrainEnsemble, _LoadEnsembleModels
 from .EnsembleOutput import _EvaluateModel
-from .EnsembleConfig import DEVICE, ENSEMBLE_SIZE
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from LSTMModel import Config
 
 def main(filePaths=None, logger=None):
 
@@ -17,24 +21,30 @@ def main(filePaths=None, logger=None):
     os.makedirs(plot_dir, exist_ok=True)
     os.makedirs(ensemble_save_dir, exist_ok=True)
 
+    # Configuration
+    config = Config()
+    batch_size = config.batch_size
+    device = config.device
+
     # Load dataset
-    dataset, demand_mean, demand_std = _DataLoader(dataset_path)
-    trainLoader, valLoader, testLoader = _DatasetSplit(dataset)
+    dataset, demand_mean, demand_std = _DataLoader(dataset_path, ensemble_save_dir)
+    trainLoader, valLoader, testLoader = _DatasetSplit(dataset, batch_size)
 
     # Train Ensemble
     _TrainEnsemble(
-        n_models=ENSEMBLE_SIZE,
+        n_models=n_models,
+        epochs=epochs,
         train_loader=trainLoader,
         val_loader=valLoader,
-        device=DEVICE,
+        config=config,
         save_dir=ensemble_save_dir,
         logger=logger
     )
     logger.success("Ensemble training completed successfully!")
 
     # Load Ensemble Models
-    models = _LoadEnsembleModels(ensemble_save_dir, DEVICE)
+    models = _LoadEnsembleModels(ensemble_save_dir, config)
 
     logger.info("Generating Ensemble plots...")
 
-    _EvaluateModel(testLoader, models, DEVICE, demand_mean, demand_std, plot_dir=plot_dir)
+    _EvaluateModel(testLoader, models, device, demand_mean, demand_std, n_models, plot_dir=plot_dir)

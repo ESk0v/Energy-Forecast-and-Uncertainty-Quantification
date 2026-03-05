@@ -8,7 +8,7 @@ from HyperparameterTuning.HPTHelpers import (
     load_dataset, trialSuggestions
 )
 
-def hptmain(n_trials, local, filePaths, logger=None):
+def hptmain(n_trials, epochs, local, filePaths, logger=None):
     
     optuna.logging.disable_default_handler()
 

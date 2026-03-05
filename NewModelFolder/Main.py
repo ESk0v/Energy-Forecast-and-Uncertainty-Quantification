@@ -34,7 +34,7 @@ LOCAL_MODELDIR_PATH = os.path.join(
 def getModelPath(model_dir):
 
     os.makedirs(model_dir, exist_ok=True)
-    
+
     existing = [f for f in os.listdir(model_dir) if f.startswith("model_v") and f.endswith(".pth")]
     existing_versions = []
     for f in existing:
@@ -47,7 +47,7 @@ def getModelPath(model_dir):
     model_path = os.path.join(model_dir, f"model_v{next_version}")
     os.makedirs(model_path, exist_ok=True)
     model_save_path = os.path.join(model_path, f"model_v{next_version}.pth")
-    
+
     return model_save_path, next_version
 
 def ensure_dataset_exists(local=False, logger=None):
@@ -58,7 +58,7 @@ def ensure_dataset_exists(local=False, logger=None):
             LOCAL_RINGKØBING_PATH if local else SERVER_RINGKØBING_PATH,
             LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH
         ]
-    
+
     if not os.path.exists(filePaths[1]):
         logger.info("Dataset not found, Creating a new dataset")
 
@@ -70,10 +70,10 @@ def ensure_dataset_exists(local=False, logger=None):
         else:
             logger.error("Failed to create dataset")
             raise FileNotFoundError(f"Dataset not found at {filePaths[1]} after creation attempt.")
-        
+
     logger.info("Dataset exists")
 
-def RunTuning(local=False, n_trials=50, logger=None):
+def RunTuning(local=False, n_trials=50, epochs=1, logger=None):
     #Start the Tuning part
 
     filePaths = [
@@ -86,6 +86,7 @@ def RunTuning(local=False, n_trials=50, logger=None):
     #Run the HyperparameterTuning
     study = hptmain(
         n_trials=n_trials,
+        epochs=epochs,
         local=local,
         filePaths=filePaths,
         logger=logger
@@ -94,7 +95,7 @@ def RunTuning(local=False, n_trials=50, logger=None):
     logger.success("Hyperparameter Tuning complete!")
 
 
-def RunLstm(local=False, logger=None):
+def RunLstm(local=False, epochs=1, logger=None):
     logger.info("Starting LSTM training...")
     
     modelPath, version = getModelPath(LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH)
@@ -104,10 +105,10 @@ def RunLstm(local=False, logger=None):
         modelPath
     ]
 
-    train_model(filePaths=filePaths, logger=logger)
+    train_model(filePaths=filePaths, epochs=epochs, logger=logger)
     logger.success("Finished LSTM plotting")
 
-def RunEnsemble(local=False, logger=None):
+def RunEnsemble(local=False, epochs=1, n_models=3, logger=None):
     logger.info("Starting ensemble...")
 
     # Always find the latest model_vN/ folder automatically
@@ -129,7 +130,7 @@ def RunEnsemble(local=False, logger=None):
         latest_run_dir,
     ]
 
-    EnsembleModel(filePaths=filePaths)
+    EnsembleModel(filePaths=filePaths, epochs=epochs, n_models=n_models)
     logger.success("Finished Ensemble plotting")
 
 def Main():
@@ -151,9 +152,17 @@ def Main():
     parser.add_argument("--local", action="store_true", help="Use local paths")
 
     parser.add_argument("--n_trials", type=int, default=50, help="Number of trials for tuning")
+    # --n_models <int> → number of models to train for the ensemble (default: 5)
+    parser.add_argument("--n_models", type=int, default=3, help="Number of models for ensemble")
+    # --tune_epochs <int> → number of epochs to train during tuning (default: 1)
+    parser.add_argument("--tune_epochs", type=int, default=1, help="Number of epochs for tuning")
+    # --train_epochs <int> → number of epochs to train during final training (default: 1)
+    parser.add_argument("--train_epochs", type=int, default=1, help="Number of epochs for training")
+    # --ensemble_epochs <int> → number of epochs to train each ensemble model (default: 1)
+    parser.add_argument("--ensemble_epochs", type=int, default=1, help="Number of epochs for ensemble training")
 
     args = parser.parse_args()
-    
+
     # Initialize logger
     mainLogger = setup_logger("Main", local=args.local)
     trainLogger = setup_logger("LSTM", local=args.local)
@@ -167,31 +176,35 @@ def Main():
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
+            epochs=args.tune_epochs,
             logger=HPTLogger
         )
 
     elif args.mode == "train":
         RunLstm(
             local=args.local,
+            epochs=args.train_epochs,
             logger=trainLogger
         )
 
     elif args.mode == "ensemble":
-        RunEnsemble(local=args.local, logger=ensembleLogger)
+        # Run ensemble on the latest (or only) existing model_vN/ folder
+        RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, logger=ensembleLogger)
 
     elif args.mode == "full":
         mainLogger.info("RUNNING TUNING")
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
+            epochs=args.tune_epochs,
             logger=mainLogger
         )
 
         mainLogger.info("RUNNING TRAINING")
-        RunLstm(local=args.local, logger=mainLogger)
+        RunLstm(local=args.local, epochs=args.train_epochs, logger=mainLogger)
 
         mainLogger.info("RUNNING ENSEMBLE")
-        RunEnsemble(local=args.local, logger=mainLogger)
+        RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, logger=mainLogger)
 
 if __name__ == "__main__":
     Main()

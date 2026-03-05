@@ -9,7 +9,7 @@ from LSTM.Plotting import main as generate_plots
 from LSTM.LSTMTraining import load_and_split_dataset, train_model
 from LSTM.GenerateREADME import generate_training_readme
 
-def LSTMMain(filePaths=None, logger=None):
+def LSTMMain(filePaths=None, epochs=1, logger=None):
     # Paths
     dataset_path    = filePaths[0]
     model_save_path = filePaths[1]
@@ -17,8 +17,6 @@ def LSTMMain(filePaths=None, logger=None):
     # run_dir is the folder containing the .pth file
     run_dir = os.path.dirname(model_save_path)
     os.makedirs(run_dir, exist_ok=True)
-    print(f"Run directory: {run_dir}")
-    print(f"Model will be saved to: {model_save_path}")
 
     # Load and split dataset
     train_dataset, val_dataset, train_size, val_size = load_and_split_dataset(dataset_path)

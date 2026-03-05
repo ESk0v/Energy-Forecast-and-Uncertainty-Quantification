@@ -1,11 +1,12 @@
 """
 GenerateREADME — Auto-generates README files for the LSTM model.
 =================================================================
-Two READMEs are produced:
+Three READMEs are produced:
   - README_Training.md   → written at the end of training (LSTMTraining.py)
   - README_Evaluation.md → written after all evaluation plots are saved (Plotting.py)
+  - README_Ensemble.md   → written after ensemble plots are saved (EnsembleOutput.py)
 
-Both are saved to the same plot/output directory.
+All are saved to the run's plot/output directory.
 """
 
 import os
@@ -383,3 +384,345 @@ in summer).
     readme_path = os.path.join(plot_dir, "README_Evaluation.md")
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(content)
+
+# ============================================================
+# Ensemble README
+# ============================================================
+
+def generate_ensemble_readme(plot_dir, ensemble_size, model_filename="unknown", generated_plots=None):
+    """
+    Write README_Ensemble.md to plot_dir after all ensemble plots are saved.
+    Active plots (in generated_plots) get an embedded image + full explanation.
+    Disabled plots are listed briefly in an 'Optional plots' section.
+
+    Args:
+        plot_dir        : Directory where the README and plots are saved.
+        ensemble_size   : Number of models in the ensemble.
+        model_filename  : The base LSTM checkpoint the ensemble was built on.
+        generated_plots : List of filenames actually saved this run.
+    """
+    if generated_plots is None:
+        generated_plots = []
+
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Per-plot metadata: filename → (short title, explanation block)
+    PLOT_DOCS = {
+        f"week_forecast_ensemble_week2.png": (
+            "Weekly Forecast with Uncertainty",
+            f"""\
+A single 168-hour (7-day) window from the test set. Three elements are plotted:
+- **Actual abvaerk** (solid line) — the ground truth
+- **Predicted mean** (solid line) — the ensemble average across all {ensemble_size} models
+- **±2σ band** (shaded) — the total uncertainty interval covering ~95% of a Gaussian
+
+| Pattern | Meaning |
+|---|---|
+| Actual stays inside the ±2σ band most of the time | Well-calibrated uncertainty — the model knows what it doesn't know |
+| Actual frequently outside the band | Under-confident predictions — uncertainty is underestimated |
+| Band is very wide throughout | Over-confident uncertainty estimate, or high inherent data noise |
+| Band narrows at predictable hours and widens at transitions | Model is more certain at regular demand patterns — expected and healthy |
+| Band widens beyond 24h and keeps growing | Normal: uncertainty accumulates with forecast distance |
+| Band stays the same width regardless of horizon | Model may be collapsing to mean predictions at long horizons |
+| Mean tracks actual well but band is very wide | Aleatoric uncertainty dominates — inherent noise in the demand signal |
+| Mean drifts away from actual and band does not cover it | Systematic bias — model is missing a feature or pattern |"""
+        ),
+        "calibration_curve.png": (
+            "Calibration Curve",
+            """\
+The x-axis shows the **theoretical coverage** of a Gaussian interval (e.g. 68% for ±1σ,
+95% for ±2σ). The y-axis shows the **empirical coverage** — the actual fraction of test
+points that fell inside that interval. The dashed diagonal is the ideal: perfect
+calibration. Each point corresponds to a different σ multiplier (0.5σ → 3.0σ).
+
+| Pattern | Meaning |
+|---|---|
+| Curve follows the diagonal closely | Well-calibrated — stated confidence matches actual coverage ✓ |
+| Curve is above the diagonal | **Conservative** (over-dispersed) — intervals are too wide |
+| Curve is below the diagonal | **Overconfident** (under-dispersed) — intervals are too narrow |
+| Curve starts below diagonal then crosses above | Mixed calibration — over-dispersed only at high confidence levels |
+| Curve is flat / horizontal | Pathological — uncertainty estimates are not varying meaningfully |
+| S-shaped curve | Bimodal error distribution — model behaves differently in two regimes |
+
+**Example — well-calibrated:** Points fall close to the diagonal. The 95% interval contains ~95% of the data.
+**Example — overconfident:** Points cluster below the diagonal. The stated 95% interval only contains ~70% of the data.
+**Example — under-trained ensemble:** Points cluster above the diagonal — models disagree too much."""
+        ),
+        "residuals_ensemble.png": (
+            "Residuals Over Time",
+            """\
+The difference (actual − predicted mean) plotted for every test timestep in
+chronological order. A rolling mean is overlaid to expose seasonal trends.
+
+| Pattern | Meaning |
+|---|---|
+| Residuals centred near zero throughout | No systematic bias — model is well-calibrated on average |
+| Persistent positive residuals | Model consistently under-predicts — consider adding features |
+| Residuals spike at certain dates | Model failed on an unusual event (cold snap, holiday) |
+| Residuals grow larger in winter | Model struggles with heating-season demand peaks |
+| Residuals decrease over time | Distribution shift — later data is easier or model improves |"""
+        ),
+        "uncertainty_histogram.png": (
+            "Uncertainty Distribution",
+            """\
+Histogram of total predictive standard deviation (σ) across all test timesteps.
+
+| Pattern | Meaning |
+|---|---|
+| Narrow, single-peaked histogram | Model has similar confidence everywhere |
+| Wide or flat histogram | Uncertainty varies greatly — expected for seasonal demand |
+| Bimodal histogram | Two distinct uncertainty regimes (e.g. summer vs winter) |
+| Histogram skewed right (long tail) | Occasional high-uncertainty predictions — check which timesteps |
+| Very low std values throughout | Model may be under-dispersed — check calibration curve |"""
+        ),
+        "prediction_vs_actual.png": (
+            "Predicted vs Actual Scatter",
+            """\
+Scatter plot of predicted mean (y) vs actual abvaerk (x) for every test timestep.
+The dashed diagonal is perfect prediction (y = x).
+
+| Pattern | Meaning |
+|---|---|
+| Points tightly clustered on the diagonal | High accuracy across the full range |
+| Fan shape (wider at high values) | Heteroscedastic error — model struggles at peak demand |
+| Points systematically above the diagonal | Model over-predicts on average |
+| Points systematically below the diagonal | Model under-predicts on average |
+| Two distinct clusters | Bi-modal demand — consider separate models for heating/non-heating seasons |"""
+        ),
+        "uncertainty_vs_error.png": (
+            "Uncertainty vs Absolute Error",
+            """\
+Scatter of predicted total σ (x) vs absolute error (y) for every test timestep.
+A well-calibrated model should show a positive correlation — higher stated uncertainty
+should correspond to higher actual errors.
+
+| Pattern | Meaning |
+|---|---|
+| Clear positive correlation | Uncertainty estimates are informative and trustworthy ✓ |
+| Flat cloud (no correlation) | Uncertainty estimates are uninformative |
+| Negative correlation | Pathological — model is most uncertain where it is most accurate |
+| Points form two clusters | Two uncertainty regimes with different error characteristics |"""
+        ),
+    }
+
+    # Split into active (generated this run) and disabled
+    active   = [f for f in PLOT_DOCS if f in generated_plots]
+    disabled = [f for f in PLOT_DOCS if f not in generated_plots]
+
+    # Overview table rows (active plots only)
+    overview_rows = ""
+    for fname in active:
+        title, _ = PLOT_DOCS[fname]
+        overview_rows += f"| `{fname}` | {title} |\n"
+
+    # Full section per active plot (image embedded + explanation)
+    active_sections = ""
+    for fname in active:
+        title, explanation = PLOT_DOCS[fname]
+        active_sections += f"""\
+---
+
+## `{fname}` — {title}
+
+![{title}]({fname})
+
+{explanation}
+
+"""
+
+    # Brief section for disabled plots
+    if disabled:
+        disabled_section = "---\n\n## Optional Plots (currently disabled)\n\n"
+        disabled_section += (
+            "Enable these in `EnsembleOutput.py` by uncommenting the relevant lines "
+            "in `_GeneratePlots`.\n\n"
+        )
+        for fname in disabled:
+            title, explanation = PLOT_DOCS[fname]
+            disabled_section += f"### `{fname}` — {title}\n\n{explanation}\n\n"
+    else:
+        disabled_section = ""
+
+    content = f"""\
+# Ensemble LSTM — Uncertainty Quantification Plots
+
+Auto-generated by `EnsembleOutput.py` on {generated_at}.
+
+---
+
+## What is the Ensemble?
+
+Instead of training a single LSTM model, the ensemble trains **{ensemble_size} independent
+models** with different random seeds. Each model sees the same data but starts from a
+different random initialisation, producing slightly different predictions.
+
+The spread across these predictions tells us how **uncertain** the model is:
+
+| Uncertainty type | Source | Meaning |
+|---|---|---|
+| **Epistemic** | Disagreement between the {ensemble_size} models | What the model *doesn't know* — reduces with more data/training |
+| **Aleatoric** | Each model's own predicted variance (GaussianNLL output) | Inherent noise in the data — cannot be reduced |
+| **Total** | Combined epistemic + aleatoric | The full predictive uncertainty |
+
+Base model: `{model_filename}`
+
+---
+
+## Plots Overview
+
+| File | Contents |
+|---|---|
+{overview_rows}
+{active_sections}{disabled_section}---
+
+## General Notes
+
+- All plots use the **test set only** — the ensemble never saw this data during training.
+- The ensemble was trained with **GaussianNLLLoss**, so each model outputs both a
+  predicted mean and a predicted variance. Aleatoric uncertainty comes from the variance
+  output; epistemic uncertainty comes from disagreement between the {ensemble_size} models.
+- A larger ensemble (more models) reduces the variance of the epistemic uncertainty
+  estimate but increases training time proportionally.
+"""
+    readme_path = os.path.join(plot_dir, "README_Ensemble.md")
+    with open(readme_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+    content = f"""\
+# Ensemble LSTM — Uncertainty Quantification Plots
+
+Auto-generated by `EnsembleOutput.py`.
+
+---
+
+## What is the Ensemble?
+
+Instead of training a single LSTM model, the ensemble trains **{ensemble_size} independent
+models** with different random seeds. Each model sees the same data but starts from a
+different random initialisation, producing slightly different predictions.
+
+The spread across these predictions tells us how **uncertain** the model is:
+
+| Uncertainty type | Source | Meaning |
+|---|---|---|
+| **Epistemic** | Disagreement between the {ensemble_size} models | What the model *doesn't know* — reduces with more data/training |
+| **Aleatoric** | Each model's own predicted variance (GaussianNLL output) | Inherent noise in the data — cannot be reduced |
+| **Total** | Combined epistemic + aleatoric | The full predictive uncertainty |
+
+Base model: `{model_filename}`
+
+---
+
+## Plots Overview
+
+| File | Contents |
+|---|---|
+| `week_forecast_ensemble_week2.png` | One-week forecast with ±2σ uncertainty band |
+| `calibration_curve.png` | Empirical vs theoretical coverage of prediction intervals |
+
+The following plots are available but currently disabled — enable them in `EnsembleOutput.py`:
+
+| File | Contents |
+|---|---|
+| `residuals_ensemble.png` | Ensemble residuals (actual − predicted mean) over time |
+| `uncertainty_histogram.png` | Distribution of total predictive uncertainty (std) |
+| `prediction_vs_actual.png` | Scatter of predicted mean vs actual abvaerk |
+| `uncertainty_vs_error.png` | Scatter of predicted uncertainty vs absolute error |
+
+---
+
+## Weekly Forecast with Uncertainty
+
+![Weekly Forecast with Uncertainty](week_forecast_ensemble_week2.png)
+
+### What it shows
+A single 168-hour (7-day) window from the test set. Three elements are plotted:
+- **Actual abvaerk** (solid line) — the ground truth
+- **Predicted mean** (solid line) — the ensemble average across all {ensemble_size} models
+- **±2σ band** (shaded) — the total uncertainty interval covering ~95% of a Gaussian
+
+### How to interpret
+
+| Pattern | Meaning |
+|---|---|
+| Actual stays inside the ±2σ band most of the time | Well-calibrated uncertainty — the model knows what it doesn't know |
+| Actual frequently outside the band | Under-confident predictions — uncertainty is underestimated |
+| Band is very wide throughout | Over-confident uncertainty estimate, or high inherent data noise |
+| Band narrows at predictable hours (e.g. midday) and widens at transitions | Model is more certain at regular demand patterns — expected and healthy |
+| Band widens beyond 24h and keeps growing | Normal: uncertainty accumulates with forecast distance |
+| Band stays the same width regardless of horizon | Model may be collapsing to mean predictions at long horizons |
+| Mean tracks actual well but band is very wide | Aleatoric uncertainty dominates — inherent noise in the demand signal |
+| Mean drifts away from actual and band does not cover it | Systematic bias — model is missing a feature or pattern |
+
+---
+
+## Calibration Curve
+
+![Calibration Curve](calibration_curve.png)
+
+### What it shows
+The x-axis shows the **theoretical coverage** of a Gaussian interval (e.g. 68% for ±1σ,
+95% for ±2σ). The y-axis shows the **empirical coverage** — the actual fraction of test
+points that fell inside that interval. The dashed diagonal is the ideal: perfect
+calibration.
+
+Each point on the curve corresponds to a different σ multiplier (from 0.5σ to 3.0σ).
+
+### How to interpret
+
+| Pattern | Meaning |
+|---|---|
+| Curve follows the diagonal closely | Well-calibrated — stated confidence matches actual coverage ✓ |
+| Curve is above the diagonal | **Conservative** (over-dispersed) — intervals are too wide; the model is more uncertain than it needs to be |
+| Curve is below the diagonal | **Overconfident** (under-dispersed) — intervals are too narrow; the model underestimates uncertainty |
+| Curve starts below diagonal then crosses above | Mixed calibration — well-calibrated at low confidence, over-dispersed at high confidence |
+| Curve is flat / horizontal | Pathological — uncertainty estimates are not varying meaningfully |
+| S-shaped curve | Bimodal error distribution — model behaves differently in two regimes (e.g. heating season vs summer) |
+
+**Example — well-calibrated:** Points fall close to the diagonal across the full range.
+The 95% interval actually contains ~95% of the data.
+
+**Example — overconfident:** Points cluster below the diagonal. The stated 95% interval
+only contains ~70% of the data — the model is too sure of itself.
+
+**Example — under-trained ensemble:** Points cluster above the diagonal. The models
+disagree too much (high epistemic uncertainty), making intervals unnecessarily wide.
+
+---
+
+## Optional Plots (currently disabled)
+
+### Residuals Over Time
+The difference (actual − predicted mean) plotted for every test timestep. Useful for
+detecting systematic bias over time or at certain periods (e.g. winter peaks).
+
+### Uncertainty Distribution
+Histogram of total predictive std across all test timesteps. A narrow, peaked histogram
+means the model has similar confidence everywhere. A wide or multi-modal histogram means
+uncertainty varies significantly (e.g. higher in winter, lower in summer).
+
+### Predicted vs Actual Scatter
+Each point is one timestep. Points on the diagonal = perfect prediction. Fan shape =
+heteroscedastic error (larger errors at high demand values).
+
+### Uncertainty vs Error
+Scatter of predicted std (x) vs absolute error (y). If the model is well-calibrated,
+there should be a positive correlation — higher stated uncertainty should correspond to
+higher actual errors. A flat cloud means uncertainty estimates are uninformative.
+
+---
+
+## General Notes
+
+- All plots use the **test set only** — the ensemble never saw this data during training.
+- The ensemble was trained with **GaussianNLLLoss**, so each model outputs both a
+  predicted mean and a predicted variance. Aleatoric uncertainty comes from the variance
+  output; epistemic uncertainty comes from disagreement between the {ensemble_size} models.
+- A larger ensemble (more models) reduces the variance of the epistemic uncertainty
+  estimate but increases training time proportionally.
+"""
+    readme_path = os.path.join(plot_dir, "README_Ensemble.md")
+    with open(readme_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
