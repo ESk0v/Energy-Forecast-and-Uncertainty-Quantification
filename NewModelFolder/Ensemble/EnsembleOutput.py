@@ -7,7 +7,7 @@ from pathlib import Path
 from EnsembleHelpers import _EnsemblePredict
 
 
-def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, plot_dir):
+def _EvaluateModel(test_loader, models, demand_mean, demand_std, device, plot_dir):
     """
     Runs ensemble evaluation with:
     - Mean prediction

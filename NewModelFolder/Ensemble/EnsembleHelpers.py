@@ -12,8 +12,7 @@ import os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from LSTMModel import LSTMForecast, Config
-from EnsembleConfig import BATCH_SIZE, EPOCHS
+from LSTMModel import LSTMForecast
 
 
 def _DataLoader(dataset_path):
@@ -32,7 +31,7 @@ def _DataLoader(dataset_path):
     return tensor_dataset, demand_mean, demand_std
 
 
-def _DatasetSplit(dataset):
+def _DatasetSplit(dataset, batch_size):
     # Split dataset into train/val/test
 
     val_ratio, test_ratio = 0.1, 0.1
@@ -45,16 +44,15 @@ def _DatasetSplit(dataset):
     val_dataset = Subset(dataset, range(train_size, train_size + val_size))
     test_dataset = Subset(dataset, range(train_size + val_size, n_total))
 
-    
-    trainLoader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    valLoader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    testLoader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    trainLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    valLoader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    testLoader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return trainLoader, valLoader, testLoader
 
 
 def _EnsemblePredict(models, enc, dec, demand_mean, demand_std):
-    #
+    # 
     
     mus = []
     vars_ = []
@@ -92,7 +90,8 @@ def _EnsemblePredict(models, enc, dec, demand_mean, demand_std):
     return mean_real, total_std_real, epistemic_real, aleatoric_real
 
 
-def _LoadEnsembleModels(model_dir, device):
+def _LoadEnsembleModels(model_dir, config):
+    device = config.device
     model_dir = Path(model_dir)
     model_paths = sorted(model_dir.glob("lstm_seq2seq_model_*.pth"))
 
@@ -100,7 +99,7 @@ def _LoadEnsembleModels(model_dir, device):
 
     for path in model_paths:
         # allow Config to be unpickled safely
-        with torch.serialization.safe_globals([Config]):
+        with torch.serialization.safe_globals([config]):
             checkpoint = torch.load(path, map_location=device, weights_only=False)
 
         config = checkpoint["config"]
@@ -112,14 +111,7 @@ def _LoadEnsembleModels(model_dir, device):
     return models
 
 
-def _TrainEnsemble(
-    n_models,
-    train_loader,
-    val_loader,
-    device,
-    save_dir,
-    base_seed=1000,
-):
+def _TrainEnsemble(n_models, epochs, train_loader, val_loader, save_dir, config, base_seed=1000):
     """
     Train an ensemble of encoder-decoder LSTM models with different random seeds.
     """
@@ -138,8 +130,8 @@ def _TrainEnsemble(
         np.random.seed(seed)
 
         # Initialize model and config
-        config = Config()
-        config.epochs=EPOCHS
+        config.epochs=epochs
+        device = config.device
         model = LSTMForecast(config).to(device)
 
         criterion = nn.GaussianNLLLoss()
