@@ -1,5 +1,4 @@
 from pathlib import Path
-import torch
 
 from .EnsembleHelpers import _DataLoader, _DatasetSplit, _TrainEnsemble, _LoadEnsembleModels
 from .EnsembleOutput import _EvaluateModel
