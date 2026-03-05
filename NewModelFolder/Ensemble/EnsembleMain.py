@@ -1,12 +1,17 @@
-import torch
+import os
+import sys
 
 from .EnsembleHelpers import _DataLoader, _DatasetSplit, _TrainEnsemble, _LoadEnsembleModels
 from .EnsembleOutput import _EvaluateModel
-from .EnsembleConfig import DEVICE, ENSEMBLE_SIZE
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from LSTMModel import Config
 
 
 #This function runs the ensemble model that has inherent model uncertainty
-def main(local=False, filePaths=None):
+def main(local=False, filePaths=None, epochs=1, n_models=3):
     #
 
     # Unpack file paths
@@ -14,23 +19,29 @@ def main(local=False, filePaths=None):
     model_dir = filePaths[1]
     plot_dir = filePaths[2]
 
-    #Load dataset
+    # Configuration
+    config = Config()
+    batch_size = config.batch_size
+    device = config.device
+
+    # Load dataset
     dataset, demand_mean, demand_std = _DataLoader(dataset_path, model_dir)
-    trainLoader, valLoader, testLoader = _DatasetSplit(dataset)
+    trainLoader, valLoader, testLoader = _DatasetSplit(dataset, batch_size)
 
     # Train Ensemble
     print("=== Training ensemble ===")
     _TrainEnsemble(
-        n_models=ENSEMBLE_SIZE,
+        n_models=n_models,
+        epochs=epochs,
         train_loader=trainLoader,
         val_loader=valLoader,
-        device=DEVICE,
+        config=config,
         save_dir=model_dir
     )
     print("Ensemble training complete.")
 
     # Load Ensemble Models
-    models = _LoadEnsembleModels(model_dir, DEVICE)
+    models = _LoadEnsembleModels(model_dir, config)
     print(f"Loaded {len(models)} ensemble models.")
 
-    _EvaluateModel(testLoader, models, DEVICE, demand_mean, demand_std, plot_dir)
+    _EvaluateModel(testLoader, models, demand_mean, demand_std, device, plot_dir)

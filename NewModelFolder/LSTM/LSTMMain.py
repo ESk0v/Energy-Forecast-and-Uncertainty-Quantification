@@ -5,12 +5,12 @@ from LSTM.LSTMTraining import main as train_model
 from LSTM.Plotting import main as generate_plots
 
 # This function handle the main
-def LSTMMain(local=False, filePaths=None):
+def LSTMMain(local=False, filePaths=None, epochs=1):
 
     print(f"[Step 1/2] LSTM Training")
     print("-" * 40)
     # train_model returns the per-run folder (e.g. Models/SingleLSTM/model_v1/)
-    run_dir = train_model(local=local, filePaths=filePaths)
+    run_dir = train_model(local=local, filePaths=filePaths, epochs=epochs)
     print()
 
     print(f"[Step 2/2] Evaluation Plotting")
