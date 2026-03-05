@@ -13,19 +13,21 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from LSTMModel import LSTMForecast, Config
-from .EnsembleConfig import DATASET_PATH, ENSEMBLE_SAVE_DIR, BATCH_SIZE, EPOCHS
+from .EnsembleConfig import BATCH_SIZE, EPOCHS
 
 
-def _DataLoader():
+def _DataLoader(dataset_path, save_dir):
     #
 
     # Create directories if they don't exist
-    if ENSEMBLE_SAVE_DIR.exists():
-        shutil.rmtree(ENSEMBLE_SAVE_DIR)  # delete folder and all contents
-    ENSEMBLE_SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    save_dir = Path(save_dir)
+
+    if save_dir.exists():
+        shutil.rmtree(save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
 
     # Load dataset
-    dataset = torch.load(DATASET_PATH, weights_only=False)
+    dataset = torch.load(dataset_path, weights_only=False)
 
     tensor_dataset = TensorDataset(
         dataset['encoder'],
@@ -168,7 +170,7 @@ def _TrainEnsemble(
 
                 optimizer.zero_grad()
                 mu, log_var = model(enc, dec)
-                loss = criterion(mu, torch.exp(log_var), tgt)
+                loss = criterion(mu, tgt, torch.exp(log_var))
                 loss.backward()
                 optimizer.step()
 
@@ -183,7 +185,7 @@ def _TrainEnsemble(
                 for enc, dec, tgt in val_loader:
                     enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
                     mu, log_var = model(enc, dec)
-                    loss = criterion(mu, torch.exp(log_var), tgt)
+                    loss = criterion(mu, tgt, torch.exp(log_var))
                     val_loss_epoch += loss.item() * enc.size(0)
 
             val_loss = val_loss_epoch / len(val_loader.dataset)
