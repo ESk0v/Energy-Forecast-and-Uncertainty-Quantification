@@ -7,10 +7,9 @@ from .EnsembleOutput import _EvaluateModel
 
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from LSTMModel import Config
 
-def main(local=False, filePaths=None, epochs=1, n_models=3):
+def main(filePaths=None, epochs=1, n_models=3):
     """
     Run the ensemble pipeline.
 
@@ -58,4 +57,4 @@ def main(local=False, filePaths=None, epochs=1, n_models=3):
     models = _LoadEnsembleModels(ensemble_save_dir, config)
     print(f"Loaded {len(models)} ensemble models.")
 
-    _EvaluateModel(testLoader, models, device, demand_mean, demand_std, plot_dir=plot_dir)
+    _EvaluateModel(testLoader, models, device, demand_mean, demand_std, n_models, plot_dir=plot_dir)
