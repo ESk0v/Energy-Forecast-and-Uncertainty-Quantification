@@ -4,7 +4,6 @@ from torch import nn
 from torch.utils.data import Subset, TensorDataset, DataLoader
 import numpy as np
 from tqdm import tqdm
-import shutil
 
 import sys
 import os
@@ -13,7 +12,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from LSTMModel import LSTMForecast, Config
-from EnsembleConfig import BATCH_SIZE, EPOCHS
+from .EnsembleConfig import BATCH_SIZE, EPOCHS
 
 
 def _DataLoader(dataset_path):
@@ -26,8 +25,18 @@ def _DataLoader(dataset_path):
         dataset['target']
     )
 
-    demand_mean = dataset['demand_mean']
-    demand_std = dataset['demand_std']
+    if 'demand_mean' in dataset and 'demand_std' in dataset:
+        demand_mean = dataset['demand_mean']
+        demand_std  = dataset['demand_std']
+    else:
+        # Dataset was created before demand_mean/demand_std were saved.
+        # Estimate from the full target tensor as a fallback.
+        # Re-run DatasetCreation.py to fix this permanently.
+        print("WARNING: dataset.pt has no 'demand_mean'/'demand_std' keys. "
+              "Estimating from target data — re-run DatasetCreation.py to fix this.")
+        targets = dataset['target'].numpy()
+        demand_mean = float(targets.mean())
+        demand_std  = float(targets.std())
 
     return tensor_dataset, demand_mean, demand_std
 
