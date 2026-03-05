@@ -440,7 +440,7 @@ def main(filePaths=None):
     # ================================================================
     generate_evaluation_readme(plot_dir, best_epoch, checkpoint['val_loss'], n_test_samples,
                                train_size, val_size, test_size, n_total,
-                               model_filename=os.path.basename(run_dir) + "/model.pth")
+                               model_filename="../model.pth")
     print(f"  Saved: {os.path.join(plot_dir, 'README_Evaluation.md')}")
 
 
