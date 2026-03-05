@@ -9,7 +9,7 @@ from LSTMModel import Config, LSTMForecast
 from LSTM.GenerateREADME import generate_training_readme
 
 
-def main(local=False, filePaths=None):
+def main(filePaths=None):
     """
     Train the LSTM model on the dataset and save the best checkpoint.
 

@@ -79,7 +79,7 @@ def RunLstm(local=False):
 
     ensure_dataset_exists(local=local, dataset_path=filePaths[0])
 
-    run_dir = train_model(local=local, filePaths=filePaths)
+    run_dir = train_model(filePaths=filePaths)
     print("Finished LSTM training.")
 
     return run_dir
