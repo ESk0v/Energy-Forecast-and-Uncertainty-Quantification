@@ -46,7 +46,7 @@ def ensure_dataset_exists(local=False, dataset_path=None):
 
         create_dataset(local=local, filePaths=filePaths)
 
-def RunTuning(local=False, n_trials=50, verbose=False):
+def RunTuning(local=False, n_trials=50, epochs=1, verbose=False):
     #Start the Tuning part
     print("Starting hyperparameter tuning...")
 
@@ -60,6 +60,7 @@ def RunTuning(local=False, n_trials=50, verbose=False):
     #Run the HyperparameterTuning
     study = hptmain(
         n_trials=n_trials,
+        epochs=epochs,
         local=local,
         verbose=verbose,
         filePaths=filePaths
@@ -69,7 +70,7 @@ def RunTuning(local=False, n_trials=50, verbose=False):
     print("Finished hyperparameter tuning.")
 
 
-def RunLstm(local=False):
+def RunLstm(local=False, epochs=1):
     print("Starting LSTM training...")
     
     filePaths = [
@@ -78,14 +79,13 @@ def RunLstm(local=False):
     ]
 
     ensure_dataset_exists(local=local, dataset_path=filePaths[0])
-
-    run_dir = train_model(filePaths=filePaths)
+    
+    train_model(local=local, filePaths=filePaths, epochs=epochs)
     print("Finished LSTM training.")
 
     return run_dir
 
-
-def RunEnsemble(local=False, run_dir=None):
+def RunEnsemble(local=False, epochs=1, n_models=3, run_dir=None):
     print("Starting ensemble...")
 
     if run_dir is None:
@@ -108,7 +108,10 @@ def RunEnsemble(local=False, run_dir=None):
         run_dir,
     ]
 
-    EnsembleModel(filePaths=filePaths)
+    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
+
+    EnsembleModel(local=local, filePaths=filePaths, epochs=epochs, n_models=n_models)
+
     print("Finished ensemble.")
 
 
@@ -133,6 +136,14 @@ def Main():
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     # --n_trials <int> → number of Optuna trials for hyperparameter tuning (default: 50)
     parser.add_argument("--n_trials", type=int, default=50, help="Number of trials for tuning")
+    # --n_models <int> → number of models to train for the ensemble (default: 5)
+    parser.add_argument("--n_models", type=int, default=3, help="Number of models for ensemble")
+    # --tune_epochs <int> → number of epochs to train during tuning (default: 1)
+    parser.add_argument("--tune_epochs", type=int, default=1, help="Number of epochs for tuning")
+    # --train_epochs <int> → number of epochs to train during final training (default: 1)
+    parser.add_argument("--train_epochs", type=int, default=1, help="Number of epochs for training")
+    # --ensemble_epochs <int> → number of epochs to train each ensemble model (default: 1)
+    parser.add_argument("--ensemble_epochs", type=int, default=1, help="Number of epochs for ensemble training")
 
     args = parser.parse_args()
 
@@ -140,29 +151,31 @@ def Main():
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
+            epochs=args.tune_epochs,
             verbose=args.verbose
         )
 
     elif args.mode == "train":
-        RunLstm(local=args.local)
+        RunLstm(local=args.local, epochs=args.train_epochs)
 
     elif args.mode == "ensemble":
         # Run ensemble on the latest (or only) existing model_vN/ folder
-        RunEnsemble(local=args.local)
+        RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models)
 
     elif args.mode == "full":
         print("RUNNING TUNING")
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
+            epochs=args.tune_epochs,
             verbose=args.verbose
         )
 
         print("RUNNING TRAINING")
-        run_dir = RunLstm(local=args.local)
+        run_dir = RunLstm(local=args.local, epochs=args.train_epochs)
 
-        print("RUNNING ENSEMBLE")
-        RunEnsemble(local=args.local, run_dir=run_dir)
+        print("RUNNING ENSEBMLE")
+        RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, run_dir=run_dir)
 
 if __name__ == "__main__":
     Main()

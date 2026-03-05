@@ -1,10 +1,16 @@
+import os
+import sys
 from pathlib import Path
 
 from .EnsembleHelpers import _DataLoader, _DatasetSplit, _TrainEnsemble, _LoadEnsembleModels
 from .EnsembleOutput import _EvaluateModel
-from .EnsembleConfig import DEVICE, ENSEMBLE_SIZE
 
-def main(filePaths=None):
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from LSTMModel import Config
+
+def main(local=False, filePaths=None, epochs=1, n_models=3):
     """
     Run the ensemble pipeline.
 
@@ -27,23 +33,29 @@ def main(filePaths=None):
     plot_dir.mkdir(parents=True, exist_ok=True)
     ensemble_save_dir.mkdir(parents=True, exist_ok=True)
 
+    # Configuration
+    config = Config()
+    batch_size = config.batch_size
+    device = config.device
+
     # Load dataset
-    dataset, demand_mean, demand_std = _DataLoader(dataset_path)
-    trainLoader, valLoader, testLoader = _DatasetSplit(dataset)
+    dataset, demand_mean, demand_std = _DataLoader(dataset_path, ensemble_save_dir)
+    trainLoader, valLoader, testLoader = _DatasetSplit(dataset, batch_size)
 
     # Train Ensemble
     print("=== Training ensemble ===")
     _TrainEnsemble(
-        n_models=ENSEMBLE_SIZE,
+        n_models=n_models,
+        epochs=epochs,
         train_loader=trainLoader,
         val_loader=valLoader,
-        device=DEVICE,
+        config=config,
         save_dir=ensemble_save_dir
     )
     print("Ensemble training complete.")
 
     # Load Ensemble Models
-    models = _LoadEnsembleModels(ensemble_save_dir, DEVICE)
+    models = _LoadEnsembleModels(ensemble_save_dir, config)
     print(f"Loaded {len(models)} ensemble models.")
 
-    _EvaluateModel(testLoader, models, DEVICE, demand_mean, demand_std, plot_dir=plot_dir)
+    _EvaluateModel(testLoader, models, device, demand_mean, demand_std, plot_dir=plot_dir)

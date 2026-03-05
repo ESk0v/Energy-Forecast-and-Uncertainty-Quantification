@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from GenerateREADME import generate_ensemble_readme
 
 
-def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, plot_dir):
+def _EvaluateModel(test_loader, models, demand_mean, demand_std, device, plot_dir):
     """
     Runs ensemble evaluation with:
     - Mean prediction

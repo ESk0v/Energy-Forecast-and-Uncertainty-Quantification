@@ -6,7 +6,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset, Subset
 from tqdm import tqdm
 from LSTMModel import Config, LSTMForecast
-from LSTM.GenerateREADME import generate_training_readme
 
 
 def main(filePaths=None):
@@ -26,22 +25,18 @@ def main(filePaths=None):
 
     os.makedirs(model_dir, exist_ok=True)
 
-    # Auto-increment version and create a unique run folder: model_vN/
-    existing = [f for f in os.listdir(model_dir)
-                if os.path.isdir(os.path.join(model_dir, f))
-                and f.startswith("model_v")]
+    # Auto-increment model version: model_v1.pth, model_v2.pth, ...
+    existing = [f for f in os.listdir(model_dir) if f.startswith("model_v") and f.endswith(".pth")]
     existing_versions = []
     for f in existing:
         try:
-            v = int(f.replace("model_v", ""))
+            v = int(f.replace("model_v", "").replace(".pth", ""))
             existing_versions.append(v)
         except ValueError:
             pass
     next_version = max(existing_versions, default=0) + 1
-    run_dir      = os.path.join(model_dir, f"model_v{next_version}")
-    os.makedirs(run_dir, exist_ok=True)
-    model_save_path = os.path.join(run_dir, "model.pth")
-    print(f"Run folder created: {run_dir}")
+    model_save_path = os.path.join(model_dir, f"model_v{next_version}.pth")
+    print(f"Model will be saved as: model_v{next_version}.pth")
 
     # -----------------------------
     # Load Dataset
@@ -147,25 +142,6 @@ def main(filePaths=None):
 
     print(f"Training complete. Best model saved at epoch {checkpoint['epoch']} "
           f"(val_loss={checkpoint['val_loss']:.4f}).")
-
-    # Generate training README summarising this run
-    generate_training_readme(
-        plot_dir       = run_dir,
-        model_filename = "model.pth",
-        config         = config,
-        train_size     = train_size,
-        val_size       = val_size,
-        test_size      = test_size,
-        n_total        = n_total,
-        epochs_run     = len(train_losses),
-        best_epoch     = checkpoint['epoch'],
-        best_val_loss  = checkpoint['val_loss'],
-        early_stopped  = epochs_no_improve >= patience,
-        patience       = patience,
-    )
-    print(f"Training README saved to: {os.path.join(run_dir, 'README_Training.md')}")
-
-    return run_dir
 
 
 # Allow standalone execution: python3 LSTMTraining.py --local
