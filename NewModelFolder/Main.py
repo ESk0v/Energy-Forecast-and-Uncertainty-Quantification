@@ -91,6 +91,8 @@ def RunEnsemble(local=False, run_dir=None):
     if run_dir is None:
         # Standalone ensemble run — find the latest model_vN/ folder
         model_dir = LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH
+        if not os.path.isdir(model_dir):
+            raise FileNotFoundError(f"Model directory does not exist: {model_dir}")
         existing = [f for f in os.listdir(model_dir)
                     if os.path.isdir(os.path.join(model_dir, f))
                     and f.startswith("model_v")]
