@@ -7,7 +7,6 @@ from scipy.special import erf
 from pathlib import Path
 
 from .EnsembleHelpers import _EnsemblePredict
-from .EnsembleConfig import ENSEMBLE_SIZE
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "LSTM")))
 from GenerateREADME import generate_ensemble_readme
 

@@ -83,8 +83,6 @@ def RunLstm(local=False, epochs=1):
     train_model(local=local, filePaths=filePaths, epochs=epochs)
     print("Finished LSTM training.")
 
-    return run_dir
-
 def RunEnsemble(local=False, epochs=1, n_models=3, run_dir=None):
     print("Starting ensemble...")
 
