@@ -28,7 +28,7 @@ DATASET_START = pd.Timestamp("2023-01-01 01:00")
 ENCODER_HISTORY = 168  # must match DatasetCreation.py
 
 
-def main(local=False, filePaths=None):
+def main(filePaths=None):
     """
     Generate all evaluation plots from a trained model checkpoint.
 
@@ -49,10 +49,10 @@ def main(local=False, filePaths=None):
         run_dir      = filePaths[2]
     else:
         # Standalone fallback (python3 Plotting.py --local):
-        # scan SingleLSTM/ for the highest-versioned run folder
-        base_dir  = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        # scan Models/ for the highest-versioned run folder
+        base_dir     = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
-        model_dir    = os.path.join(base_dir, "Models", "SingleLSTM")
+        model_dir    = os.path.join(base_dir, "Models")
         existing     = [f for f in os.listdir(model_dir)
                         if os.path.isdir(os.path.join(model_dir, f))
                         and f.startswith("model_v")]
@@ -66,7 +66,7 @@ def main(local=False, filePaths=None):
             raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
         run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
 
-    plot_dir = run_dir  # plots, READMEs, and model.pth all live together
+    plot_dir = os.path.join(run_dir, "Plots")  # plots and evaluation README live here
     os.makedirs(plot_dir, exist_ok=True)
 
     model_save_path = os.path.join(run_dir, "model.pth")
@@ -440,16 +440,12 @@ def main(local=False, filePaths=None):
     # ================================================================
     generate_evaluation_readme(plot_dir, best_epoch, checkpoint['val_loss'], n_test_samples,
                                train_size, val_size, test_size, n_total,
-                               model_filename=os.path.basename(run_dir) + "/model.pth")
+                               model_filename="../model.pth")
     print(f"  Saved: {os.path.join(plot_dir, 'README_Evaluation.md')}")
 
 
 
 # Allow standalone execution: python3 Plotting.py --local
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--local', action='store_true',
-                        help='Use local relative paths instead of server paths')
-    args = parser.parse_args()
-    main(local=args.local)
+    main()
 

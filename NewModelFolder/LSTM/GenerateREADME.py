@@ -96,7 +96,7 @@ recent {test_pct:.1f}% of the data and is never touched during training.
 
 ## Loss Curve
 
-![Train vs Validation Loss](train_val_loss.png)
+![Train vs Validation Loss](Plots/train_val_loss.png)
 
 The training and validation loss curve is generated automatically alongside this README.
 

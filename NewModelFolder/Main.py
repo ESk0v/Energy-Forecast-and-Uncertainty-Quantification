@@ -22,17 +22,9 @@ SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/File
 LOCAL_RINGKØBING_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Files", "RingkøbingData.csv")
 
-SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
+SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models"
 LOCAL_MODELDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
-
-SERVER_ENSEMBLE_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/EnsembleModel"
-LOCAL_ENSEMBLE_MODELDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Models", "EnsembleModel")
-
-SERVER_PLOTDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Plots"
-LOCAL_PLOTDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Plots")
+    os.path.dirname(os.path.abspath(__file__)), "Models")
 
 # ==========================================================
 # DATASET CHECK
@@ -86,24 +78,37 @@ def RunLstm(local=False):
     ]
 
     ensure_dataset_exists(local=local, dataset_path=filePaths[0])
-    
-    train_model(local=local, filePaths=filePaths)
+
+    run_dir = train_model(filePaths=filePaths)
     print("Finished LSTM training.")
 
+    return run_dir
 
-def RunEnsemble(local=False):
+
+def RunEnsemble(local=False, run_dir=None):
     print("Starting ensemble...")
+
+    if run_dir is None:
+        # Standalone ensemble run — find the latest model_vN/ folder
+        model_dir = LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH
+        if not os.path.isdir(model_dir):
+            raise FileNotFoundError(f"Model directory does not exist: {model_dir}")
+        existing = [f for f in os.listdir(model_dir)
+                    if os.path.isdir(os.path.join(model_dir, f))
+                    and f.startswith("model_v")]
+        versions = [int(f.replace("model_v", "")) for f in existing
+                    if f.replace("model_v", "").isdigit()]
+        if not versions:
+            raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
+        run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
 
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
-        LOCAL_ENSEMBLE_MODELDIR_PATH if local else SERVER_ENSEMBLE_MODELDIR_PATH,
-        LOCAL_PLOTDIR_PATH if local else SERVER_PLOTDIR_PATH
+        LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
+        run_dir,
     ]
 
-    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
-
-    EnsembleModel(local=local, filePaths=filePaths)
-
+    EnsembleModel(filePaths=filePaths)
     print("Finished ensemble.")
 
 
@@ -139,11 +144,10 @@ def Main():
         )
 
     elif args.mode == "train":
-        RunLstm(
-            local=args.local
-        )
+        RunLstm(local=args.local)
 
     elif args.mode == "ensemble":
+        # Run ensemble on the latest (or only) existing model_vN/ folder
         RunEnsemble(local=args.local)
 
     elif args.mode == "full":
@@ -154,12 +158,11 @@ def Main():
             verbose=args.verbose
         )
 
-
         print("RUNNING TRAINING")
-        RunLstm(local=args.local)
+        run_dir = RunLstm(local=args.local)
 
-        print("RUNNING ENSEBMLE")
-        RunEnsemble(local=args.local)
+        print("RUNNING ENSEMBLE")
+        RunEnsemble(local=args.local, run_dir=run_dir)
 
 if __name__ == "__main__":
     Main()

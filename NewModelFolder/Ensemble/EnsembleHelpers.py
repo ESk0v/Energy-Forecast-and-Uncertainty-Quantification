@@ -16,17 +16,8 @@ from LSTMModel import LSTMForecast, Config
 from .EnsembleConfig import BATCH_SIZE, EPOCHS
 
 
-def _DataLoader(dataset_path, save_dir):
-    #
-
-    # Create directories if they don't exist
-    save_dir = Path(save_dir)
-
-    if save_dir.exists():
-        shutil.rmtree(save_dir)
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    # Load dataset
+def _DataLoader(dataset_path):
+    """Load dataset from the given path and return tensors + demand stats."""
     dataset = torch.load(dataset_path, weights_only=False)
 
     tensor_dataset = TensorDataset(

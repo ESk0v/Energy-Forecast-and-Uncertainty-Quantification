@@ -79,7 +79,7 @@ def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, plot_di
         targets_rescaled,
         epistemicPredictions,
         aleatoricPredictions,
-        plot_dir
+        plot_dir=plot_dir
     )
 
 
@@ -102,11 +102,10 @@ def _GeneratePlots(
 ):
     _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week, week_index, plot_dir)
     _PlotCalibration(meanPredictions, stdPredictions, targets, plot_dir)
-    #_PlotResiduals(meanPredictions, targets, plot_dir)
-    #_PlotUncertaintyHistogram(stdPredictions, plot_dir)
-    #_PlotPredictionVsActual(meanPredictions, targets, plot_dir)
-    #_PlotUncertaintyVsError(meanPredictions, stdPredictions, targets, plot_dir)
-
+    # _PlotResiduals(meanPredictions, targets, plot_dir)
+    # _PlotUncertaintyHistogram(stdPredictions, plot_dir)
+    # _PlotPredictionVsActual(meanPredictions, targets, plot_dir)
+    # _PlotUncertaintyVsError(meanPredictions, stdPredictions, targets, plot_dir)
 
 # ============================================================
 # INDIVIDUAL PLOTS
@@ -141,7 +140,7 @@ def _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week,
     plot_dir = Path(plot_dir)
     plot_dir.mkdir(parents=True, exist_ok=True)
     save_path = plot_dir / f"week_forecast_ensemble_week{week_index+1}.png"
-    
+
     plt.savefig(save_path)
     plt.close()
 
