@@ -83,7 +83,6 @@ def RunLstm(local=False):
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
         LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
-        LOCAL_PLOTDIR_PATH if local else SERVER_PLOTDIR_PATH,
     ]
 
     ensure_dataset_exists(local=local, dataset_path=filePaths[0])

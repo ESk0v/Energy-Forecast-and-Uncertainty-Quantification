@@ -5,7 +5,6 @@
 /NewModelFolder/Files/dataset.pt
 /NewModelFolder/Files/dataset.json
 /NewModelFolder/Files/RingkøbingData.csv
-NewModelFolder/Models/SingleLSTM/lstm_model.pth
 
 #Pycache and pyc files ignored
 __pycache__/
