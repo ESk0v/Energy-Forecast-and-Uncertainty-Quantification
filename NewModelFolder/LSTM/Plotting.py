@@ -184,15 +184,17 @@ def main(local=False, filePaths=None):
     ax.plot(epochs_range, val_losses,   label="Validation Loss", linewidth=1.5, marker='o', markersize=2)
     ax.axvline(x=best_epoch, color='green', linestyle='--', alpha=0.7, label=f'Best epoch ({best_epoch})')
     ax.set_xlabel("Epoch", fontsize=12)
-    ax.set_ylabel("MSE Loss", fontsize=12)
-    ax.set_title("Train vs Validation Loss", fontsize=14)
+    ax.set_ylabel("GaussianNLL Loss", fontsize=12)
+    ax.set_title("Train vs Validation Loss (GaussianNLL)", fontsize=14)
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
 
     all_losses = train_losses + val_losses
-    if len(all_losses) > 0 and max(all_losses) / max(min(all_losses), 1e-10) > 10:
+    if (len(all_losses) > 0
+            and min(all_losses) > 0
+            and max(all_losses) / min(all_losses) > 10):
         ax.set_yscale('log')
-        ax.set_ylabel("MSE Loss (log scale)", fontsize=12)
+        ax.set_ylabel("GaussianNLL Loss (log scale)", fontsize=12)
 
     plt.tight_layout()
     plt.savefig(train_val_plot_path, dpi=150)
