@@ -66,7 +66,7 @@ def main(local=False, filePaths=None):
             raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
         run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
 
-    plot_dir = run_dir  # plots, READMEs, and model.pth all live together
+    plot_dir = os.path.join(run_dir, "Plots")  # plots and evaluation README live here
     os.makedirs(plot_dir, exist_ok=True)
 
     model_save_path = os.path.join(run_dir, "model.pth")
