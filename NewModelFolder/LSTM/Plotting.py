@@ -28,7 +28,7 @@ DATASET_START = pd.Timestamp("2023-01-01 01:00")
 ENCODER_HISTORY = 168  # must match DatasetCreation.py
 
 
-def main(local=False, filePaths=None):
+def main(filePaths=None):
     """
     Generate all evaluation plots from a trained model checkpoint.
 
