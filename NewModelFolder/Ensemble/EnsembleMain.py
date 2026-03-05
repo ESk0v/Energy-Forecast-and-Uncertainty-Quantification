@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from .EnsembleHelpers import _DataLoader, _DatasetSplit, _TrainEnsemble, _LoadEnsembleModels
-from .EnsembleOutput import _EvaluateModel
-from .EnsembleConfig import DEVICE, ENSEMBLE_SIZE
+from EnsembleHelpers import _DataLoader, _DatasetSplit, _TrainEnsemble, _LoadEnsembleModels
+from EnsembleOutput import _EvaluateModel
+from EnsembleConfig import DEVICE, ENSEMBLE_SIZE
 
 def main(filePaths=None):
     """
