@@ -14,7 +14,7 @@ def main(local=False, filePaths=None):
     Train the LSTM model on the dataset and save the best checkpoint.
 
     Returns:
-        run_dir: Path to the per-model folder (e.g. Models/SingleLSTM/model_v3/)
+        run_dir: Path to the per-model folder (e.g. Models/model_v3/)
                  containing the .pth file and README_Training.md.
     """
 
@@ -22,7 +22,7 @@ def main(local=False, filePaths=None):
     # Paths
     # -----------------------------
     dataset_path = filePaths[0]
-    model_dir    = filePaths[1]  # e.g. .../Models/SingleLSTM
+    model_dir    = filePaths[1]  # e.g. .../Models
 
     os.makedirs(model_dir, exist_ok=True)
 

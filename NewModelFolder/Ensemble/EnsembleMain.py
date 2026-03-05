@@ -11,9 +11,9 @@ def main(filePaths=None):
 
     Args:
         filePaths: List of [dataset_path, model_dir, run_dir].
-                   run_dir is the versioned single-LSTM folder
-                   (e.g. Models/SingleLSTM/model_v1/).
-                   Ensemble models are saved to run_dir/Plots/EnsembleModel/.
+                   run_dir is the versioned model folder
+                   (e.g. Models/model_v1/).
+                   Ensemble models are saved to run_dir/EnsembleModel/.
                    Ensemble plots are saved to run_dir/Plots/.
     """
 
@@ -21,7 +21,7 @@ def main(filePaths=None):
     # Paths
     # -----------------------------
     dataset_path      = Path(filePaths[0])
-    run_dir           = Path(filePaths[2])   # e.g. .../SingleLSTM/model_v1/
+    run_dir           = Path(filePaths[2])   # e.g. .../Models/model_v1/
     plot_dir          = run_dir / "Plots"
     ensemble_save_dir = run_dir / "EnsembleModel"
 

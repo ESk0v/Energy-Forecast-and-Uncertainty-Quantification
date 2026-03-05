@@ -49,10 +49,10 @@ def main(local=False, filePaths=None):
         run_dir      = filePaths[2]
     else:
         # Standalone fallback (python3 Plotting.py --local):
-        # scan SingleLSTM/ for the highest-versioned run folder
-        base_dir  = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        # scan Models/ for the highest-versioned run folder
+        base_dir     = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
-        model_dir    = os.path.join(base_dir, "Models", "SingleLSTM")
+        model_dir    = os.path.join(base_dir, "Models")
         existing     = [f for f in os.listdir(model_dir)
                         if os.path.isdir(os.path.join(model_dir, f))
                         and f.startswith("model_v")]

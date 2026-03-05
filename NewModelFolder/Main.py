@@ -22,17 +22,9 @@ SERVER_RINGKØBING_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/File
 LOCAL_RINGKØBING_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Files", "RingkøbingData.csv")
 
-SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/SingleLSTM"
+SERVER_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models"
 LOCAL_MODELDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Models", "SingleLSTM")
-
-SERVER_ENSEMBLE_MODELDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Models/EnsembleModel"
-LOCAL_ENSEMBLE_MODELDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Models", "EnsembleModel")
-
-SERVER_PLOTDIR_PATH = "/ceph/project/SW6-Group18-Abvaerk/NewModelFolder/Plots"
-LOCAL_PLOTDIR_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Plots")
+    os.path.dirname(os.path.abspath(__file__)), "Models")
 
 # ==========================================================
 # DATASET CHECK

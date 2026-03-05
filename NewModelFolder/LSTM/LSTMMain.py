@@ -9,7 +9,7 @@ def LSTMMain(local=False, filePaths=None):
 
     print(f"[Step 1/2] LSTM Training")
     print("-" * 40)
-    # train_model returns the per-run folder (e.g. Models/SingleLSTM/model_v1/)
+    # train_model returns the per-run folder (e.g. Models/model_v1/)
     run_dir = train_model(local=local, filePaths=filePaths)
     print()
 
