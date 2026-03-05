@@ -44,11 +44,15 @@ def generate_training_readme(plot_dir, model_filename, config,
                  f"(stopped at epoch {epochs_run})")  if early_stopped else "No — ran to completion"
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Collect all scalar config attributes
+    # Collect all scalar config attributes (handles class- and instance-level attrs)
     config_rows = ""
-    for key in sorted(vars(config)):
-        if not key.startswith("_"):
-            config_rows += f"| `{key}` | {getattr(config, key)} |\n"
+    for key in sorted(dir(config)):
+        if key.startswith("_"):
+            continue
+        value = getattr(config, key)
+        if callable(value):
+            continue
+        config_rows += f"| `{key}` | {value} |\n"
 
     content = f"""\
 # LSTM Training Run — Summary
