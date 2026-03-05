@@ -3,9 +3,10 @@ import numpy as np
 import torch
 import argparse
 from tqdm import tqdm
+import logging
 
 
-def main(local = False, filePaths = None):
+def main(local = False, filePaths = None, logger=None):
     csv_file = filePaths[0]
     output_path = filePaths[1]
 
@@ -13,7 +14,7 @@ def main(local = False, filePaths = None):
     forecast_length = 168  # 1 week forecast
 
     df = pd.read_csv(csv_file, parse_dates=["dateTime"])
-    print(f"Loaded {len(df)} rows.")
+    logger.info(f"Loaded dataset")
 
     # -----------------------------
     # Interpolate missing values (instead of filling with 0)
@@ -37,19 +38,25 @@ def main(local = False, filePaths = None):
     forecast_cols_all = [temperature_cols, humidity_cols, wind_cols, precip_cols, cloud_cols]
 
     # -----------------------------
-    # Prepare time features
+    # Prepare time features (fixed to avoid fragmentation warning)
     # -----------------------------
     def get_time_features(df):
         hour = df['dateTime'].dt.hour
         weekday = df['dateTime'].dt.weekday
         month = df['dateTime'].dt.month
 
-        df['hour_sin'] = np.sin(2 * np.pi * hour / 24)
-        df['hour_cos'] = np.cos(2 * np.pi * hour / 24)
-        df['weekday_sin'] = np.sin(2 * np.pi * weekday / 7)
-        df['weekday_cos'] = np.cos(2 * np.pi * weekday / 7)
-        df['month_sin'] = np.sin(2 * np.pi * month / 12)
-        df['month_cos'] = np.cos(2 * np.pi * month / 12)
+        # Create all time features at once using pd.concat to avoid fragmentation
+        time_features = pd.DataFrame({
+            'hour_sin': np.sin(2 * np.pi * hour / 24),
+            'hour_cos': np.cos(2 * np.pi * hour / 24),
+            'weekday_sin': np.sin(2 * np.pi * weekday / 7),
+            'weekday_cos': np.cos(2 * np.pi * weekday / 7),
+            'month_sin': np.sin(2 * np.pi * month / 12),
+            'month_cos': np.cos(2 * np.pi * month / 12)
+        }, index=df.index)
+        
+        # Concatenate once instead of adding columns one by one
+        df = pd.concat([df, time_features], axis=1)
         return df
 
     df = get_time_features(df)
@@ -64,7 +71,9 @@ def main(local = False, filePaths = None):
     decoder_data = []
     target_data = []
 
-    for i in tqdm(range(len(df) - encoder_history - forecast_length)):
+    logger.info("Building encoder/decoder/target tensors...")
+    
+    for i in tqdm(range(len(df) - encoder_history - forecast_length), disable=True):
         encoder_slice = df.iloc[i:i+encoder_history][encoder_features].values.astype(np.float32)
 
         decoder_time_slice = df.iloc[i+encoder_history:i+encoder_history+forecast_length][decoder_time_features].values.astype(np.float32)
@@ -84,20 +93,11 @@ def main(local = False, filePaths = None):
     encoder_data = np.stack(encoder_data)
     decoder_data = np.stack(decoder_data)
     target_data = np.stack(target_data)
-
+    
     torch.save({
         'encoder': torch.from_numpy(encoder_data),
         'decoder': torch.from_numpy(decoder_data),
         'target': torch.from_numpy(target_data)
     }, output_path)
 
-    print(f"Dataset saved to {output_path}")
     return output_path
-
-
-# Allow standalone execution: python3 DatasetCreation.py --local
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--local', action='store_true', help='Use local relative paths instead of server paths')
-    args = parser.parse_args()
-    main(local=args.local)

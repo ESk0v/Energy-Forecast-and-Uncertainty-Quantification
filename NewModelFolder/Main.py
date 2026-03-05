@@ -5,6 +5,7 @@ from Data.DatasetCreation import main as create_dataset
 from HyperparameterTuning.HPTMain import hptmain
 from LSTM.LSTMMain import LSTMMain as train_model
 from Ensemble.EnsembleMain import main as EnsembleModel
+from Logger import setup_logger
 
 # ==========================================================
 # CONFIG
@@ -30,63 +31,85 @@ LOCAL_MODELDIR_PATH = os.path.join(
 # DATASET CHECK
 # ==========================================================
 
-def ensure_dataset_exists(local=False, dataset_path=None):
-    print("Checking dataset existence...")
+def getModelPath(model_dir):
 
-    if os.path.exists(dataset_path):
-        print("Dataset exists.")
-        
-    else:
-        print("Dataset not found, Creating a new dataset")
+    os.makedirs(model_dir, exist_ok=True)
+    
+    existing = [f for f in os.listdir(model_dir) if f.startswith("model_v") and f.endswith(".pth")]
+    existing_versions = []
+    for f in existing:
+        try:
+            v = int(f.replace("model_v", "").replace(".pth", ""))
+            existing_versions.append(v)
+        except ValueError:
+            pass
+    next_version = max(existing_versions, default=0) + 1
+    model_save_path = os.path.join(model_dir, f"model_v{next_version}.pth")
+    
+    return model_save_path, next_version
 
-        filePaths = [
+def ensure_dataset_exists(local=False, logger=None):
+
+    logger.info("Checking dataset existence...")
+
+    filePaths = [
             LOCAL_RINGKØBING_PATH if local else SERVER_RINGKØBING_PATH,
             LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH
         ]
+    
+    if not os.path.exists(filePaths[1]):
+        logger.info("Dataset not found, Creating a new dataset")
 
-        create_dataset(local=local, filePaths=filePaths)
+        create_dataset(local=local, filePaths=filePaths, logger=logger)
 
-def RunTuning(local=False, n_trials=50, verbose=False):
+        if os.path.exists(filePaths[1]):
+            logger.success("Dataset created successfully")
+            return
+        else:
+            logger.error("Failed to create dataset")
+            raise FileNotFoundError(f"Dataset not found at {filePaths[1]} after creation attempt.")
+        
+    logger.info("Dataset exists")
+
+def RunTuning(local=False, n_trials=50, logger=None):
     #Start the Tuning part
-    print("Starting hyperparameter tuning...")
 
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
         LOCAL_JSON_FOR_HPT_PATH if local else SERVER_JSON_FOR_HPT_PATH
     ]
     #Check if the dataset exist
-    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
+    logger.info("Starting hyperparameter tuning...")
 
     #Run the HyperparameterTuning
     study = hptmain(
         n_trials=n_trials,
         local=local,
-        verbose=verbose,
-        filePaths=filePaths
+        filePaths=filePaths,
+        logger=logger
     )
 
-    #Hyper ParameterTuning is done
-    print("Finished hyperparameter tuning.")
+    logger.success("Hyperparameter Tuning complete!")
 
 
-def RunLstm(local=False):
-    print("Starting LSTM training...")
+def RunLstm(local=False, logger=None):
+    logger.info("Starting LSTM training...")
     
+    modelPath, version = getModelPath(LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH)
+    logger.info(f"Model will be saved as model_v{version}.pth")
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
-        LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
+        modelPath
     ]
-
-    ensure_dataset_exists(local=local, dataset_path=filePaths[0])
     
-    train_model(local=local, filePaths=filePaths)
-    print("Finished LSTM training.")
+    train_model(filePaths=filePaths, logger=logger)
+    logger.success("Finished LSTM training.")
 
 
-def RunEnsemble(local=False):
-    print("Starting ensemble...")
+def RunEnsemble(logger=None):
+    logger.info("Starting ensemble...")
     EnsembleModel()
-    print("Finished ensemble.")
+    logger.success("Finished ensemble.")
 
 
 def Main():
@@ -101,40 +124,49 @@ def Main():
     )
 
     parser.add_argument("--local", action="store_true", help="Use local paths")
-    parser.add_argument("--verbose", action="store_true", help="Verbose output")
     parser.add_argument("--n_trials", type=int, default=50, help="Number of trials for tuning")
 
     args = parser.parse_args()
+    
+    # Initialize logger
+    mainLogger = setup_logger("Main", local=args.local)
+    trainLogger = setup_logger("LSTM", local=args.local)
+    ensembleLogger = setup_logger("Ensemble", local=args.local)
+    HPTLogger = setup_logger("Hyperparameter Tuning", local=args.local)
+    datasetLogger = setup_logger("Dataset", local=args.local)
+
+    ensure_dataset_exists(local=args.local, logger=datasetLogger)
 
     if args.mode == "tune":
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
-            verbose=args.verbose
+            logger=HPTLogger
         )
 
     elif args.mode == "train":
         RunLstm(
-            local=args.local
+            local=args.local,
+            logger=trainLogger
         )
 
     elif args.mode == "ensemble":
-        RunEnsemble()
+        RunEnsemble(logger=ensembleLogger)
 
     elif args.mode == "full":
-        print("RUNNING TUNING")
+        mainLogger.info("RUNNING TUNING")
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
-            verbose=args.verbose
+            logger=mainLogger
         )
 
 
-        print("RUNNING TRAINING")
-        RunLstm(local=args.local)
+        mainLogger.info("RUNNING TRAINING")
+        RunLstm(local=args.local, logger=mainLogger)
 
-        print("RUNNING ENSEBMLE")
-        RunEnsemble()
+        mainLogger.info("RUNNING ENSEBMLE")
+        RunEnsemble(logger=mainLogger)
 
 if __name__ == "__main__":
     Main()

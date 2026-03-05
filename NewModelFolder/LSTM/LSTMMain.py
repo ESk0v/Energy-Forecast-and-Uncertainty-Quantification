@@ -1,22 +1,30 @@
-
-import os
-
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-from LSTM.LSTMTraining import main as train_model
+from torch.utils.data import DataLoader
+from LSTMModel import Config
 from LSTM.Plotting import main as generate_plots
+from LSTM.LSTMTraining import (
+    load_and_split_dataset,
+    train_model
+)
 
-# This function handle the main
-def LSTMMain(local=False, filePaths=None):
 
-    print(f"[Step 2/3] LSTM Training")
-    print("-" * 40)
-    train_model(local=local, filePaths=filePaths)
-    print()
+def LSTMMain(filePaths=None, logger=None):    
+    # Paths
+    dataset_path = filePaths[0]
+    model_save_path = filePaths[1]
+    
+    # Load and split dataset
+    train_dataset, val_dataset, train_size, val_size = load_and_split_dataset(dataset_path)
+    logger.info(f"Dataset loaded: {train_size} training samples, {val_size} validation samples")
+    
+    # Create config and data loaders
+    config = Config()
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
+    
+    # Train model
+    best_val_loss, train_losses, val_losses = train_model(
+        config, train_loader, val_loader, train_size, val_size, 
+        model_save_path, logger
+    )
 
-    print(f"[Step 3/4] Evaluation Plotting")
-    print("-" * 40)
-    generate_plots(local=local)
-
-    print(f"\n{'='*60}")
-    print(f"  Pipeline complete.")
-    print(f"{'='*60}")
+    generate_plots(train_losses, val_losses, model_save_path, logger)
