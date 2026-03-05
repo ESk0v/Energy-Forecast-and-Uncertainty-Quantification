@@ -36,7 +36,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
         for enc, dec, tgt in train_loader:
             enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
             optimizer.zero_grad()
-            output = model(enc, dec)
+            output,_ = model(enc, dec)
             loss = criterion(output, tgt)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -51,7 +51,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
         with torch.no_grad():
             for enc, dec, tgt in val_loader:
                 enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
-                output = model(enc, dec)
+                output,_ = model(enc, dec)
                 val_loss_epoch += criterion(output, tgt).item() * enc.size(0)
         val_loss = val_loss_epoch / val_size
         
@@ -133,7 +133,7 @@ def load_dataset(local=False, filePaths=None, logger=None):
     decoder_data = dataset['decoder']
     target_data = dataset['target']
     full_dataset = TensorDataset(encoder_data, decoder_data, target_data)
-    
+
     logger.info("Dataset loaded")
 
     # Train/Val/Test split

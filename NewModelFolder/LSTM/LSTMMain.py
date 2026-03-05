@@ -41,6 +41,10 @@ def LSTMMain(filePaths=None, logger=None):
     # Load checkpoint for metadata
     checkpoint = torch.load(model_save_path, weights_only=False)
     patience = 50
+    logger.success("LSTM training completed successfully!")
+    logger.info("Generating plots...")
+    generate_plots(train_losses, val_losses, model_save_path, logger)
+    logger.info("Generating training README...")
 
     # Generate training README in run_dir
     generate_training_readme(
@@ -55,9 +59,10 @@ def LSTMMain(filePaths=None, logger=None):
         best_epoch    = checkpoint['epoch'],
         best_val_loss = checkpoint['val_loss'],
         early_stopped = (len(train_losses) < config.epochs),
-        patience      = patience,
+        patience      = patience
     )
-    logger.info(f"Training README saved to: {os.path.join(run_dir, 'README_Training.md')}")
+
+    logger.success("Training README successfully generated")
 
     # Generate evaluation plots — plots go into run_dir/Plots/
     generate_plots(train_losses, val_losses, model_save_path, logger)

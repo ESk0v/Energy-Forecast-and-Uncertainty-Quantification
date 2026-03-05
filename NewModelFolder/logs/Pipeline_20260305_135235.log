@@ -1,0 +1,11 @@
+2026-03-05 13:52:35 | INFO     | Main                  - [37mLogger initialized. Logging to: logs/Pipeline_20260305_135235.log[0m
+2026-03-05 13:52:35 | INFO     | LSTM                  - [37mLogger initialized. Logging to: logs/Pipeline_20260305_135235.log[0m
+2026-03-05 13:52:35 | INFO     | Ensemble              - [37mLogger initialized. Logging to: logs/Pipeline_20260305_135235.log[0m
+2026-03-05 13:52:35 | INFO     | Hyperparameter Tuning - [37mLogger initialized. Logging to: logs/Pipeline_20260305_135235.log[0m
+2026-03-05 13:52:35 | INFO     | Dataset               - [37mLogger initialized. Logging to: logs/Pipeline_20260305_135235.log[0m
+2026-03-05 13:52:35 | INFO     | Dataset               - [37mChecking dataset existence...[0m
+2026-03-05 13:52:35 | INFO     | Dataset               - [37mDataset exists[0m
+2026-03-05 13:52:35 | INFO     | LSTM                  - [37mStarting LSTM training...[0m
+2026-03-05 13:52:35 | INFO     | LSTM                  - [37mModel will be saved as model_v1.pth[0m
+2026-03-05 13:52:35 | INFO     | LSTM                  - [37mDataset loaded: 13766 training samples, 1720 validation samples[0m
+2026-03-05 13:52:36 | INFO     | LSTM                  - [37mStarting training for 1 epochs...[0m

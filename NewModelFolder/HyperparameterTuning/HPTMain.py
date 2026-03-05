@@ -39,8 +39,13 @@ def hptmain(n_trials, local, filePaths, logger=None):
         ) 
 
         current_trial_loss = study.trials[-1].value
-        logger.success(f"Trial {i} completed with validation loss: {current_trial_loss:.6f} | Current best: Trial {study.best_trial.number} with loss {study.best_value:.6f}")
-
+        if current_trial_loss is None:
+            logger.error(f"Trial {i} failed.")
+        else:
+            logger.success(
+                f"Trial {i} completed with validation loss: {current_trial_loss:.6f} | "
+                f"Current best: Trial {study.best_trial.number} with loss {study.best_value:.6f}"
+            )
     # Print results
     logger.info("Hyperparameter tuning evaluation")
     logger.info(f"Best trial: Validation Loss: {study.best_trial.value:.6f}")

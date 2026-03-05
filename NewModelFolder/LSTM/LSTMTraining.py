@@ -37,8 +37,8 @@ def train_epoch(model, train_loader, optimizer, criterion, device, train_size):
     for enc, dec, tgt in train_loader:
         enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
         optimizer.zero_grad()
-        output = model(enc, dec)
-        loss = criterion(output, tgt)
+        output, var = model(enc, dec)
+        loss = criterion(output, tgt, torch.exp(var))
         loss.backward()
         # Gradient clipping to prevent gradient explosion with 168-step sequences
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -56,8 +56,8 @@ def validate_epoch(model, val_loader, criterion, device, val_size):
     with torch.no_grad():
         for enc, dec, tgt in val_loader:
             enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
-            output = model(enc, dec)
-            val_loss_epoch += criterion(output, tgt).item() * enc.size(0)
+            output, var = model(enc, dec)
+            val_loss_epoch += criterion(output, tgt, torch.exp(var)).item() * enc.size(0)
     
     val_loss = val_loss_epoch / val_size
     return val_loss
@@ -77,24 +77,7 @@ def save_checkpoint(model, optimizer, config, epoch, val_loss, train_losses, val
 
 
 def train_model(config, train_loader, val_loader, train_size, val_size, 
-                model_save_path, logger=None):
-    """
-    Main training loop.
-    
-    Args:
-        config: Model configuration
-        train_loader: Training data loader
-        val_loader: Validation data loader
-        train_size: Number of training samples
-        val_size: Number of validation samples
-        model_save_path: Path to save the best model
-        logger: Logger instance (optional)
-    
-    Returns:
-        best_val_loss: Best validation loss achieved
-        train_losses: List of training losses per epoch
-        val_losses: List of validation losses per epoch
-    """
+                model_save_path, logger=None, n_total=4, test_size=44, run_dir=None):
     
     # Model, Loss, Optimizer
     model = LSTMForecast(config).to(config.device)
@@ -109,8 +92,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     
     train_losses, val_losses = [], []
     
-    if logger:
-        logger.info(f"Starting training for {config.epochs} epochs...")
+    logger.info(f"Starting training for {config.epochs} epochs...") #TODO: Daniel
     
     # Training loop
     for epoch in range(1, config.epochs + 1):
@@ -127,17 +109,16 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             epochs_no_improve = 0
+            best_epoch = epoch
             save_checkpoint(model, optimizer, config, epoch, val_loss, train_losses, val_losses, model_save_path)
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= patience:
-                if logger:
-                    logger.info(f"Early stopping at epoch {epoch}")
+                logger.info(f"Early stopping at epoch {epoch}")
                 break
         
-        # Log progress every 10 epochs
-        if logger and epoch % 10 == 0:
-            logger.debug(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}")
+        if epoch % 0 == 0:
+            logger.info(f"Epoch {epoch}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, Best epoch = {best_epoch}")
     
     # Save final loss curves into the checkpoint
     checkpoint = torch.load(model_save_path)
@@ -145,10 +126,9 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     checkpoint['val_losses'] = val_losses
     torch.save(checkpoint, model_save_path)
 
-    if logger:
-        logger.success(f"Training complete. Best model saved at epoch {checkpoint['epoch']} "
-                      f"(val_loss={checkpoint['val_loss']:.4f})")
 
+    logger.success(f"Training complete. Best model saved at epoch {checkpoint['epoch']} "
+        f"(val_loss={checkpoint['val_loss']:.4f})")
 
     return best_val_loss, train_losses, val_losses
 
