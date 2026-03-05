@@ -1,5 +1,5 @@
 #Ignore data files
-/RingkøbingData.csv
+/NewModelFolder/Files/RingkøbingData.csv
 /src/DataSet/dataset.json
 /ServerReady/Data/dataset.pt
 /NewModelFolder/Files/dataset.pt

@@ -104,31 +104,27 @@ def RunLstm(local=False, logger=None):
 
     train_model(filePaths=filePaths, logger=logger)
     logger.success("Finished LSTM training.")
-    run_dir = train_model(filePaths=filePaths)
 
-    return run_dir
-
-def RunEnsemble(local=False, run_dir=None, logger=None):
+def RunEnsemble(local=False, logger=None):
     logger.info("Starting ensemble...")
 
-    if run_dir is None:
-        # Standalone ensemble run — find the latest model_vN/ folder
-        model_dir = LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH
-        if not os.path.isdir(model_dir):
-            raise FileNotFoundError(f"Model directory does not exist: {model_dir}")
-        existing = [f for f in os.listdir(model_dir)
-                    if os.path.isdir(os.path.join(model_dir, f))
-                    and f.startswith("model_v")]
-        versions = [int(f.replace("model_v", "")) for f in existing
-                    if f.replace("model_v", "").isdigit()]
-        if not versions:
-            raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
-        run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
+    # Always find the latest model_vN/ folder automatically
+    model_dir = LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH
+    if not os.path.isdir(model_dir):
+        raise FileNotFoundError(f"Model directory does not exist: {model_dir}")
+    existing = [f for f in os.listdir(model_dir)
+                if os.path.isdir(os.path.join(model_dir, f))
+                and f.startswith("model_v")]
+    versions = [int(f.replace("model_v", "")) for f in existing
+                if f.replace("model_v", "").isdigit()]
+    if not versions:
+        raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
+    latest_run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
 
     filePaths = [
         LOCAL_DATASET_PATH if local else SERVER_DATASET_PATH,
-        LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH,
-        run_dir,
+        model_dir,
+        latest_run_dir,
     ]
 
     EnsembleModel(filePaths=filePaths)
@@ -179,8 +175,7 @@ def Main():
         )
 
     elif args.mode == "ensemble":
-        RunEnsemble(logger=ensembleLogger)
-
+        RunEnsemble(local=args.local, logger=ensembleLogger)
 
     elif args.mode == "full":
         mainLogger.info("RUNNING TUNING")
@@ -193,8 +188,8 @@ def Main():
         mainLogger.info("RUNNING TRAINING")
         RunLstm(local=args.local, logger=mainLogger)
 
-        mainLogger.info("RUNNING ENSEBMLE")
-        RunEnsemble(logger=mainLogger)
+        mainLogger.info("RUNNING ENSEMBLE")
+        RunEnsemble(local=args.local, logger=mainLogger)
 
 if __name__ == "__main__":
     Main()

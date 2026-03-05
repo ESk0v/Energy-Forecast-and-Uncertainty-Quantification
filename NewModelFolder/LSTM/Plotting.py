@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 import pandas as pd
-import argparse
 import os
 import sys
 import torch
@@ -28,53 +27,54 @@ DATASET_START = pd.Timestamp("2023-01-01 01:00")
 ENCODER_HISTORY = 168  # must match DatasetCreation.py
 
 
-def main(filePaths=None):
+def _find_latest_model(model_dir):
+    """Scan model_dir for the highest model_vN folder and return its .pth path."""
+    existing = [f for f in os.listdir(model_dir)
+                if os.path.isdir(os.path.join(model_dir, f)) and f.startswith("model_v")]
+    versions = []
+    for f in existing:
+        try:
+            versions.append(int(f.replace("model_v", "")))
+        except ValueError:
+            pass
+    if not versions:
+        raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
+    run_folder = os.path.join(model_dir, f"model_v{max(versions)}")
+    return os.path.join(run_folder, "model.pth")
+
+
+def main(train_losses=None, val_losses=None, model_save_path=None, logger=None):
     """
     Generate all evaluation plots from a trained model checkpoint.
 
     Args:
-        local:     If True, use relative paths (standalone fallback).
-        filePaths: List of [dataset_path, model_dir, plot_dir].
-                   When called from Main.py this is always provided.
-                   When run standalone (--local) it is derived here.
+        train_losses    : List of training losses (passed from LSTMMain after training).
+        val_losses      : List of validation losses.
+        model_save_path : Full path to the saved .pth file.
+                          All paths (plot_dir, dataset_path) are derived from this.
+        logger          : Logger instance (optional).
+
+    When run standalone (python3 Plotting.py --local), model_save_path is derived
+    by scanning the Models/ folder for the latest versioned run folder.
     """
 
     # -----------------------------
-    # Paths
+    # Paths — all derived from model_save_path
     # -----------------------------
-    if filePaths is not None:
-        # Propagated from LSTMMain.py — filePaths[2] is the specific run folder
-        dataset_path = filePaths[0]
-        model_dir    = filePaths[1]
-        run_dir      = filePaths[2]
-    else:
-        # Standalone fallback (python3 Plotting.py --local):
-        # scan Models/ for the highest-versioned run folder
-        base_dir     = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
-        model_dir    = os.path.join(base_dir, "Models")
-        existing     = [f for f in os.listdir(model_dir)
-                        if os.path.isdir(os.path.join(model_dir, f))
-                        and f.startswith("model_v")]
-        versions = []
-        for f in existing:
-            try:
-                versions.append(int(f.replace("model_v", "")))
-            except ValueError:
-                pass
-        if not versions:
-            raise FileNotFoundError(f"No versioned run folders found in {model_dir}")
-        run_dir = os.path.join(model_dir, f"model_v{max(versions)}")
+    run_dir      = os.path.dirname(model_save_path)           # e.g. .../Models/model_v2/
+    base_dir     = os.path.abspath(os.path.join(run_dir, "..", ".."))  # .../NewModelFolder/
+    dataset_path = os.path.join(base_dir, "Files", "dataset.pt")
+    plot_dir     = os.path.join(run_dir, "Plots")
 
-    plot_dir = os.path.join(run_dir, "Plots")  # plots and evaluation README live here
     os.makedirs(plot_dir, exist_ok=True)
 
-    model_save_path = os.path.join(run_dir, "model.pth")
     if not os.path.exists(model_save_path):
-        raise FileNotFoundError(f"model.pth not found in run folder: {run_dir}")
+        raise FileNotFoundError(f"model not found: {model_save_path}")
 
-    print(f"Plotting — dataset : {dataset_path}")
-    print(f"Plotting — run dir : {run_dir}")
+    if logger:
+        logger.info(f"Plotting — model   : {model_save_path}")
+        logger.info(f"Plotting — dataset : {dataset_path}")
+        logger.info(f"Plotting — output  : {plot_dir}")
 
     train_val_plot_path  = os.path.join(plot_dir, "train_val_loss.png")
     test_plot_path       = os.path.join(plot_dir, "test_predictions.png")
@@ -86,11 +86,17 @@ def main(filePaths=None):
     # -----------------------------
     # Load checkpoint
     # -----------------------------
+    # Load checkpoint
+    # -----------------------------
     checkpoint = torch.load(model_save_path, map_location='cpu')
-    train_losses = checkpoint['train_losses']
-    val_losses   = checkpoint['val_losses']
-    best_epoch   = checkpoint['epoch']
-    print(f"Checkpoint loaded (best epoch: {best_epoch}, val_loss: {checkpoint['val_loss']:.4f})")
+    # Use losses passed in from training if available, otherwise read from checkpoint
+    if train_losses is None:
+        train_losses = checkpoint.get('train_losses', [])
+    if val_losses is None:
+        val_losses = checkpoint.get('val_losses', [])
+    best_epoch = checkpoint['epoch']
+    if logger:
+        logger.info(f"Checkpoint loaded (best epoch: {best_epoch}, val_loss: {checkpoint['val_loss']:.4f})")
 
     # -----------------------------
     # Load dataset and rebuild data loaders
@@ -447,5 +453,13 @@ def main(filePaths=None):
 
 # Allow standalone execution: python3 Plotting.py --local
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--local', action='store_true')
+    args = parser.parse_args()
+
+    _base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    _model_dir = os.path.join(_base, "Models")
+    _model_path = _find_latest_model(_model_dir)
+    main(model_save_path=_model_path)
 

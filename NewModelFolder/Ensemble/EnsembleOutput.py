@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.special import erf
 from pathlib import Path
 
-from EnsembleHelpers import _EnsemblePredict
+from .EnsembleHelpers import _EnsemblePredict
 
 
 def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, plot_dir):

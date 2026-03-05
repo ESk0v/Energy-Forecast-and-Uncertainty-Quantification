@@ -7,7 +7,7 @@ import pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from MainLibrary import SavePlot, GetData
 
-CSV_FILE_PATH = '../../RingkøbingData.csv'
+CSV_FILE_PATH = '../../NewModelFolder/Files/RingkøbingData.csv'
 
 def get_data(filepath=CSV_FILE_PATH):
     # """Load and clean the CSV data."""

@@ -1,32 +1,63 @@
 from torch.utils.data import DataLoader
 from LSTMModel import Config
 import os
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-from LSTM.Plotting import main as generate_plots
-from LSTM.LSTMTraining import (
-    load_and_split_dataset,
-    train_model
-)
+import sys
+import torch
 
-def LSTMMain(filePaths=None, logger=None):    
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from LSTM.Plotting import main as generate_plots
+from LSTM.LSTMTraining import load_and_split_dataset, train_model
+from LSTM.GenerateREADME import generate_training_readme
+
+def LSTMMain(filePaths=None, logger=None):
     # Paths
-    dataset_path = filePaths[0]
+    dataset_path    = filePaths[0]
     model_save_path = filePaths[1]
-    
+
+    # run_dir is the folder containing the .pth file
+    run_dir = os.path.dirname(model_save_path)
+    os.makedirs(run_dir, exist_ok=True)
+
     # Load and split dataset
     train_dataset, val_dataset, train_size, val_size = load_and_split_dataset(dataset_path)
     logger.info(f"Dataset loaded: {train_size} training samples, {val_size} validation samples")
-    
+
+    # Compute test_size and n_total for the README
+    raw = torch.load(dataset_path, weights_only=False)
+    n_total   = len(raw['target'])
+    test_size = n_total - train_size - val_size
+
     # Create config and data loaders
     config = Config()
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
-    
+
     # Train model
     best_val_loss, train_losses, val_losses = train_model(
-        config, train_loader, val_loader, train_size, val_size, 
+        config, train_loader, val_loader, train_size, val_size,
         model_save_path, logger
     )
 
-    generate_plots(train_losses, val_losses, model_save_path, logger)
+    # Load checkpoint for metadata
+    checkpoint = torch.load(model_save_path, weights_only=False)
+    patience = 50
 
+    # Generate training README in run_dir
+    generate_training_readme(
+        plot_dir      = run_dir,
+        model_filename = os.path.basename(model_save_path),
+        config        = config,
+        train_size    = train_size,
+        val_size      = val_size,
+        test_size     = test_size,
+        n_total       = n_total,
+        epochs_run    = len(train_losses),
+        best_epoch    = checkpoint['epoch'],
+        best_val_loss = checkpoint['val_loss'],
+        early_stopped = (len(train_losses) < config.epochs),
+        patience      = patience,
+    )
+    logger.info(f"Training README saved to: {os.path.join(run_dir, 'README_Training.md')}")
+
+    # Generate evaluation plots — plots go into run_dir/Plots/
+    generate_plots(train_losses, val_losses, model_save_path, logger)
