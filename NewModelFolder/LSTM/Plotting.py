@@ -145,7 +145,7 @@ def main(local=False, filePaths=None):
         # Re-run DatasetCreation.py to fix this permanently.
         print("WARNING: dataset.pt has no 'demand_mean'/'demand_std' keys. "
               "Estimating from target data — re-run DatasetCreation.py to fix this.")
-        all_targets = target_data.numpy()
+        all_targets = target_data.detach().cpu().numpy()
         demand_mean = float(all_targets.mean())
         demand_std  = float(all_targets.std())
 
