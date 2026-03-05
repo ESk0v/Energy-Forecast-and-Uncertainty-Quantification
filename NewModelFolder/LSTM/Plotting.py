@@ -447,9 +447,5 @@ def main(filePaths=None):
 
 # Allow standalone execution: python3 Plotting.py --local
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--local', action='store_true',
-                        help='Use local relative paths instead of server paths')
-    args = parser.parse_args()
-    main(local=args.local)
+    main()
 
