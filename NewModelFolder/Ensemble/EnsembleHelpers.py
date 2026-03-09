@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 import sys
 import os
+import logging
 
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -27,11 +28,6 @@ def _DataLoader(dataset_path):
         demand_mean = dataset['demand_mean']
         demand_std  = dataset['demand_std']
     else:
-        # Dataset was created before demand_mean/demand_std were saved.
-        # Estimate from the full target tensor as a fallback.
-        # Re-run DatasetCreation.py to fix this permanently.
-        print("WARNING: dataset.pt has no 'demand_mean'/'demand_std' keys. "
-              "Estimating from target data — re-run DatasetCreation.py to fix this.")
         targets = dataset['target'].numpy()
         demand_mean = float(targets.mean())
         demand_std  = float(targets.std())
@@ -104,12 +100,11 @@ def _LoadEnsembleModels(model_dir, config):
     models = []
 
     for path in model_paths:
-        # allow Config to be unpickled safely
-        with torch.serialization.safe_globals([config]):
+        with torch.serialization.safe_globals([type(config)]):
             checkpoint = torch.load(path, map_location=device, weights_only=False)
 
-        config = checkpoint["config"]
-        model = LSTMForecast(config).to(device)
+        saved_config = checkpoint["config"]
+        model = LSTMForecast(saved_config).to(device)
         model.load_state_dict(checkpoint["model_state_dict"])
         model.eval()
         models.append(model)
@@ -149,7 +144,6 @@ def _TrainEnsemble(n_models, epochs, patience, train_loader, val_loader, save_di
         best_val_loss = float("inf")
         epochs_no_improve = 0
         patience = patience
-        print(f"Training model {i+1}/{n_models} for up to {epochs} epochs with patience {patience}...")
 
         for epoch in range(1, config.epochs + 1):
             model.train()

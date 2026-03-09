@@ -34,6 +34,7 @@ def LSTMMain(filePaths=None, epochs=1, patience=None, logger=None):
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
 
     # Train model
+    torch.cuda.empty_cache()
     best_val_loss, train_losses, val_losses = train_model(
         config, train_loader, val_loader, train_size, val_size,
         model_save_path, logger, patience=patience

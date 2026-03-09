@@ -34,4 +34,5 @@
 # Activate virtual environment
 cd /ceph/project/SW6-Group18-Abvaerk
 source /ceph/project/SW6-Group18-Abvaerk/.venv/bin/activate
-python -u NewModelFolder/Main.py --mode full --n_trials 35 --tune_epochs 50 --tune_patience 10 --train_epochs 500 --traing_patience 50 --n_models 5 --ensemble_epochs 200 --ensemble_patience 20
+#python -u NewModelFolder/Main.py --mode full --n_trials 35 --tune_epochs 50 --tune_patience 10 --train_epochs 500 --train_patience 50 --n_models 5 --ensemble_epochs 200 --ensemble_patience 20
+python -u NewModelFolder/Main.py --mode full --n_trials 1 --tune_epochs 1 --tune_patience 1 --train_epochs 1 --train_patience 1 --n_models 2 --ensemble_epochs 1 --ensemble_patience 1
