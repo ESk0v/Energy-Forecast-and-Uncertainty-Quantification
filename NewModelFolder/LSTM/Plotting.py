@@ -78,7 +78,7 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     # -----------------------------
     # Load checkpoint
     # -----------------------------
-    checkpoint = torch.load(model_path, map_location='cpu')
+    checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
     # Use losses passed in from training if available, otherwise read from checkpoint
     if train_losses is None:
         train_losses = checkpoint.get('train_losses', [])
@@ -136,11 +136,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
         demand_mean = dataset["demand_mean"]
         demand_std  = dataset["demand_std"]
     else:
-        # Dataset was created before demand_mean/demand_std were saved.
-        # Estimate from the full target tensor as a fallback.
-        # Re-run DatasetCreation.py to fix this permanently.
-        print("WARNING: dataset.pt has no 'demand_mean'/'demand_std' keys. "
-              "Estimating from target data — re-run DatasetCreation.py to fix this.")
         all_targets = target_data.detach().cpu().numpy()
         demand_mean = float(all_targets.mean())
         demand_std  = float(all_targets.std())
@@ -150,8 +145,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
 
     n_test_samples       = preds_h.shape[0]
     test_start_global_idx = train_size + val_size
-
-    print(f"Generating plots ({n_test_samples} test samples)...")
 
     # Helper: add day-boundary markers to a subplot
     day_hours  = [24, 48, 72, 96, 120, 144, 168]
@@ -195,7 +188,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     plt.tight_layout()
     plt.savefig(train_val_plot_path, dpi=150)
     plt.close()
-    print(f"  Saved: {train_val_plot_path}")
 
     # ================================================================
     # Plot 2: Example Forecast Windows (3 windows, 1 row)
@@ -220,7 +212,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     plt.tight_layout()
     plt.savefig(test_plot_path, dpi=150)
     plt.close()
-    print(f"  Saved: {test_plot_path}")
 
     # ================================================================
     # Plot 3: Actual vs Predicted — 3 horizons side by side
@@ -260,7 +251,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     plt.tight_layout()
     plt.savefig(scatter_plot_path, dpi=150)
     plt.close()
-    print(f"  Saved: {scatter_plot_path}")
 
     # ================================================================
     # Plot 3: Residual Diagnostics  (3 panels)
@@ -351,7 +341,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     fig.suptitle("Residual Diagnostics (Test Set)", fontsize=14, fontweight='bold')
     plt.savefig(residuals_plot_path, dpi=150)
     plt.close()
-    print(f"  Saved: {residuals_plot_path}")
 
     # ================================================================
     # Plot 4: Per-Horizon Metrics with Persistence Baseline
@@ -427,9 +416,6 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     plt.tight_layout()
     plt.savefig(horizon_plot_path, dpi=150)
     plt.close()
-    print(f"  Saved: {horizon_plot_path}")
-
-    print("All plots saved successfully.")
 
     # ================================================================
     # Generate README
@@ -437,4 +423,3 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     generate_evaluation_readme(plot_dir, best_epoch, checkpoint['val_loss'], n_test_samples,
                                train_size, val_size, test_size, n_total,
                                model_filename="../model.pth")
-    print(f"  Saved: {os.path.join(plot_dir, 'README_Evaluation.md')}")

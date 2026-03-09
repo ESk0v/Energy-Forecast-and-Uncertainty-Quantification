@@ -11,7 +11,7 @@ from LSTMModel import Config, LSTMForecast
 
 
 def train_model(config, train_loader, val_loader, train_size, val_size, device, 
-                trial=None, max_epochs=None):
+                trial=None, max_epochs=None, patience=None):
 
     model = LSTMForecast(config).to(device)
     criterion = nn.MSELoss()
@@ -21,11 +21,10 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
     )
     
     # Early stopping
-    patience = 10
+    patience = patience
     best_val_loss = np.inf
     epochs_no_improve = 0
     best_model_state = None
-    
     epochs = max_epochs if max_epochs is not None else config.epochs
     
     # GRADIENT ACCUMULATION: Simulate larger batch size
@@ -102,7 +101,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
     
     return best_val_loss, model
 
-def trialSuggestions(trial: Trial, train_dataset, val_dataset, device, 
+def trialSuggestions(trial: Trial, patience=None, train_dataset=None, val_dataset=None, device=None, 
               local=False, logger=None):
     
     # Create config with suggested hyperparameters
@@ -151,7 +150,7 @@ def trialSuggestions(trial: Trial, train_dataset, val_dataset, device,
         # Train model with early stopping
         best_val_loss, _ = train_model(
             config, train_loader, val_loader, train_size, val_size, 
-            device, trial=trial, max_epochs=1
+            device, trial=trial, max_epochs=1, patience=patience
         )
         
         return best_val_loss

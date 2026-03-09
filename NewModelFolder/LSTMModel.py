@@ -7,7 +7,6 @@ import Logger
 # -----------------------------
 # CONFIG
 # -----------------------------
-_config_printed = False
 
 class Config:
 

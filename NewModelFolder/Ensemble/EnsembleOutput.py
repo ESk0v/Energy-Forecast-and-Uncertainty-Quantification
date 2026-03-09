@@ -23,11 +23,6 @@ def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, n_model
     since predictions are already in MW.
     """
 
-    print(f"{type(demand_mean)}, {type(demand_std)}")
-    # Convert to type float32 tensors for consistent calculations
-    #demand_std = torch.as_tensor(demand_std, dtype=torch.float32)
-    print(f"demand_mean: {demand_mean:.4f} ({type(demand_mean)}), demand_std: {demand_std:.4f} ({type(demand_std)})")
-
     meanPredictions = []
     stdPredictions = []
     epistemicPredictions = []
@@ -100,7 +95,6 @@ def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, n_model
         model_filename="model.pth",
         generated_plots=generated_plots,
     )
-    print(f"Saved ensemble README to {os.path.join(str(plot_dir), 'README_Ensemble.md')}")
 
 
 # ============================================================
@@ -165,7 +159,6 @@ def _PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week,
 
     plt.savefig(save_path)
     plt.close()
-    print(f"Saved week forecast plot to {save_path}")
     return save_path.name
 
 
@@ -202,8 +195,6 @@ def _PlotCalibration(meanPredictions, stdPredictions, targets, plot_dir):
 
     plt.savefig(save_path)
     plt.close()
-    print(f"Saved calibration curve to {save_path}")
-    print("stdPredictions min/max:", stdPredictions.min(), stdPredictions.max())
     return save_path.name
 
 
@@ -224,7 +215,6 @@ def _PlotResiduals(meanPredictions, targets, plot_dir):
     save_path = plot_dir / "residuals_ensemble.png"
     plt.savefig(save_path)
     plt.close()
-    print(f"Saved residual plot to {save_path}")
     return save_path.name
 
 
@@ -242,7 +232,6 @@ def _PlotUncertaintyHistogram(stdPredictions, plot_dir):
     save_path = plot_dir / "uncertainty_histogram.png"
     plt.savefig(save_path)
     plt.close()
-    print(f"Saved uncertainty histogram to {save_path}")
     return save_path.name
 
 
@@ -261,7 +250,7 @@ def _PlotPredictionVsActual(meanPredictions, targets, plot_dir):
     save_path = plot_dir / "prediction_vs_actual.png"
     plt.savefig(save_path)
     plt.close()
-    print(f"Saved prediction vs actual plot to {save_path}")
+
     return save_path.name
 
 
@@ -281,5 +270,4 @@ def _PlotUncertaintyVsError(meanPredictions, stdPredictions, targets, plot_dir):
     save_path = plot_dir / "uncertainty_vs_error.png"
     plt.savefig(save_path)
     plt.close()
-    print(f"Saved uncertainty vs error plot to {save_path}")
     return save_path.name
