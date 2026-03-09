@@ -21,6 +21,7 @@ def train_model(model, train_loader, val_loader, epochs, lr, device):
 
     train_losses = []
     val_losses   = []
+    early_state = {}
 
     for epoch in range(epochs):
         train_loss = _run_train_epoch(model, train_loader, criterion, optimizer, device)
@@ -34,6 +35,12 @@ def train_model(model, train_loader, val_loader, epochs, lr, device):
         print(f"Epoch [{epoch + 1}/{epochs}]  "
               f"Train Loss: {train_loss:.6f}  "
               f"Val Loss: {val_loss:.6f}")
+
+        stop, early_state = _early_stopping(val_loss, model, early_state, patience=50, min_delta=1e-5)
+        if stop:
+            print("Early stopping triggered.")
+            model.load_state_dict(early_state["best_weights"])
+            break
 
     return train_losses, val_losses
 
@@ -122,3 +129,41 @@ def _compute_metrics(predictions, actuals):
     mape = np.mean(np.abs((actuals - predictions) / actuals)) * 100
 
     return {'mse': mse, 'rmse': rmse, 'mae': mae, 'mape': mape}
+
+
+def _early_stopping(val_loss, model, state, patience, min_delta=1e-5):
+    """
+    Early stopping helper.
+
+    Args:
+        val_loss : current validation loss
+        model    : torch model
+        state    : dict storing early-stop state
+        patience : epochs to wait without improvement
+        min_delta: minimum improvement threshold
+
+    Returns:
+        stop_training : bool
+        state         : updated state dict
+    """
+
+    # First call initialization
+    if not state:
+        state["best_loss"] = float("inf")
+        state["epochs_no_improve"] = 0
+        state["best_weights"] = None
+
+    # Check improvement
+    if val_loss < state["best_loss"] - min_delta:
+        state["best_loss"] = val_loss
+        state["epochs_no_improve"] = 0
+        state["best_weights"] = model.state_dict()
+        return False, state
+
+    # No improvement
+    state["epochs_no_improve"] += 1
+
+    if state["epochs_no_improve"] >= patience:
+        return True, state
+
+    return False, state
