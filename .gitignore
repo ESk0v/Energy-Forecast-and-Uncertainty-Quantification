@@ -1,8 +1,14 @@
-/RingkøbingData.csv
-/src/DataSet/dataset.json
-/Files/RingkøbingData.csv
-/Plotting/Files/RingkøbingData.csv
+#Ignore data files
+/NewModelFolder/Files/RingkøbingData.csv
+/ServerReady/Data/dataset.pt
+/NewModelFolder/Files/dataset.pt
 
-#LSTM Files ignored
-/src/Files/dataset.json
-/src/Files/LSTMModels/lstm_model.pth
+#Pycache and pyc files ignored
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Logs
+*.log
