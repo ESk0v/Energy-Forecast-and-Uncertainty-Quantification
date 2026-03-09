@@ -117,7 +117,7 @@ def _LoadEnsembleModels(model_dir, config):
     return models
 
 
-def _TrainEnsemble(n_models, epochs, train_loader, val_loader, save_dir, config, base_seed=1000, logger=None):
+def _TrainEnsemble(n_models, epochs, patience, train_loader, val_loader, save_dir, config, base_seed=1000, logger=None):
     """
     Train an ensemble of encoder-decoder LSTM models with different random seeds.
     """
@@ -148,7 +148,8 @@ def _TrainEnsemble(n_models, epochs, train_loader, val_loader, save_dir, config,
 
         best_val_loss = float("inf")
         epochs_no_improve = 0
-        patience = 30
+        patience = patience
+        print(f"Training model {i+1}/{n_models} for up to {epochs} epochs with patience {patience}...")
 
         for epoch in range(1, config.epochs + 1):
             model.train()

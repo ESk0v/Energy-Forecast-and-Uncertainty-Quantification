@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 from Data.DatasetCreation import main as create_dataset
 from HyperparameterTuning.HPTMain import hptmain
@@ -74,7 +75,7 @@ def ensure_dataset_exists(local=False, logger=None):
 
     logger.info("Dataset exists")
 
-def RunTuning(local=False, n_trials=50, epochs=1, logger=None):
+def RunTuning(local=False, n_trials=50, epochs=1, tune_patience=1, logger=None):
     #Start the Tuning part
 
     filePaths = [
@@ -87,6 +88,7 @@ def RunTuning(local=False, n_trials=50, epochs=1, logger=None):
     study = hptmain(
         n_trials=n_trials,
         epochs=epochs,
+        patience = tune_patience,
         local=local,
         filePaths=filePaths,
         logger=logger
@@ -94,8 +96,7 @@ def RunTuning(local=False, n_trials=50, epochs=1, logger=None):
 
     logger.success("Hyperparameter Tuning complete!")
 
-
-def RunLstm(local=False, epochs=1, logger=None):
+def RunLstm(local=False, epochs=1, train_patience=1, logger=None):
     logger.info("Starting LSTM training...")
     
     modelPath, version = getModelPath(LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH)
@@ -105,10 +106,10 @@ def RunLstm(local=False, epochs=1, logger=None):
         modelPath
     ]
 
-    train_model(filePaths=filePaths, epochs=epochs, logger=logger)
+    train_model(filePaths=filePaths, epochs=epochs, patience=train_patience, logger=logger)
     logger.success("Finished LSTM plotting")
 
-def RunEnsemble(local=False, epochs=1, n_models=3, logger=None):
+def RunEnsemble(local=False, epochs=1, n_models=3, ensemble_patience=1, logger=None):
     logger.info("Starting ensemble...")
 
     # Always find the latest model_vN/ folder automatically
@@ -130,7 +131,7 @@ def RunEnsemble(local=False, epochs=1, n_models=3, logger=None):
         latest_run_dir,
     ]
 
-    EnsembleModel(filePaths=filePaths, epochs=epochs, n_models=n_models, logger=logger)
+    EnsembleModel(filePaths=filePaths, epochs=epochs, n_models=n_models, patience=ensemble_patience, logger=logger)
     logger.success("Finished Ensemble plotting")
 
 def Main():
@@ -160,6 +161,12 @@ def Main():
     parser.add_argument("--train_epochs", type=int, default=1, help="Number of epochs for training")
     # --ensemble_epochs <int> → number of epochs to train each ensemble model (default: 1)
     parser.add_argument("--ensemble_epochs", type=int, default=1, help="Number of epochs for ensemble training")
+    # --tune_patience <int> → early stopping patience (in epochs) used during hyperparameter tuning (default: 1)
+    parser.add_argument("--tune_patience", type=int, default=1, help="Early-stopping patience (epochs) during tuning")
+    # --train_patience <int> → early stopping patience (in epochs) used during final LSTM training (default: 1)
+    parser.add_argument("--train_patience", type=int, default=1, help="Early-stopping patience (epochs) during training")
+    # --ensemble_patience <int> → early stopping patience (in epochs) used when training ensemble members (default: 1)
+    parser.add_argument("--ensemble_patience", type=int, default=1, help="Early-stopping patience (epochs) during ensemble training")
 
     args = parser.parse_args()
 
@@ -179,6 +186,7 @@ def Main():
             local=args.local,
             n_trials=args.n_trials,
             epochs=args.tune_epochs,
+            tune_patience=args.tune_patience,
             logger=HPTLogger
         )
 
@@ -186,24 +194,52 @@ def Main():
         RunLstm(
             local=args.local,
             epochs=args.train_epochs,
+            train_patience=args.train_patience,
             logger=trainLogger
         )
 
     elif args.mode == "ensemble":
         # Run ensemble on the latest (or only) existing model_vN/ folder
-        RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, logger=ensembleLogger)
+        RunEnsemble(
+            local=args.local, 
+            epochs=args.ensemble_epochs, 
+            n_models=args.n_models,
+            ensemble_patience=args.ensemble_patience, 
+            logger=ensembleLogger
+        )
 
     elif args.mode == "full":
+        start = time.perf_counter()
         RunTuning(
             local=args.local,
             n_trials=args.n_trials,
             epochs=args.tune_epochs,
-            logger=mainLogger
+            tune_patience=args.tune_patience,
+            logger=HPTLogger
         )
+        tuning_time = time.perf_counter() - start
+        mainLogger.debug(f"Tuning completed in {tuning_time:.2f} seconds")
 
-        RunLstm(local=args.local, epochs=args.train_epochs, logger=mainLogger)
+        start = time.perf_counter()
+        RunLstm(
+            local=args.local,
+            epochs=args.train_epochs,
+            train_patience=args.train_patience,
+            logger=trainLogger
+        )
+        train_time = time.perf_counter() - start
+        mainLogger.debug(f"LSTM training completed in {train_time:.2f} seconds")
 
-        RunEnsemble(local=args.local, epochs=args.ensemble_epochs, n_models=args.n_models, logger=mainLogger)
-
+        start = time.perf_counter()
+        RunEnsemble(
+            local=args.local, 
+            epochs=args.ensemble_epochs, 
+            n_models=args.n_models,
+            ensemble_patience=args.ensemble_patience, 
+            logger=ensembleLogger
+        )
+        ensemble_time = time.perf_counter() - start
+        mainLogger.debug(f"Ensemble training completed in {ensemble_time:.2f} seconds")
+        
 if __name__ == "__main__":
     Main()

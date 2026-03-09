@@ -77,7 +77,7 @@ def save_checkpoint(model, optimizer, config, epoch, val_loss, train_losses, val
 
 
 def train_model(config, train_loader, val_loader, train_size, val_size,
-                model_save_path, logger=None, n_total=4, test_size=44, run_dir=None):
+                model_save_path, logger=None, patience=None):
 
     # Model, Loss, Optimizer
     model = LSTMForecast(config).to(config.device)
@@ -86,7 +86,8 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
 
     # Early stopping
-    patience = 50
+    patience = patience
+    print("Training for up to {} epochs with patience {}...".format(config.epochs, patience))
     best_val_loss = np.inf
     epochs_no_improve = 0
 

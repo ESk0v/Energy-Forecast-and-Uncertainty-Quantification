@@ -8,7 +8,7 @@ from HyperparameterTuning.HPTHelpers import (
     load_dataset, trialSuggestions
 )
 
-def hptmain(n_trials, epochs, local, filePaths, logger=None):
+def hptmain(n_trials, epochs, patience, local, filePaths, logger=None):
     
     optuna.logging.disable_default_handler()
 
@@ -38,7 +38,7 @@ def hptmain(n_trials, epochs, local, filePaths, logger=None):
     # Run trials one by one and log after each
     for i in range(n_trials):
         study.optimize(
-            lambda trial: trialSuggestions(trial, train_dataset, val_dataset, device, local, logger),
+            lambda trial: trialSuggestions(trial, patience, train_dataset, val_dataset, device, local, logger),
             n_trials=1
         ) 
 

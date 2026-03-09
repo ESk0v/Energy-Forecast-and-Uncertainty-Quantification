@@ -8,7 +8,7 @@ from .EnsembleOutput import _EvaluateModel
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from LSTMModel import Config
 
-def main(filePaths=None, epochs=1, n_models=3, logger=None):
+def main(filePaths=None, epochs=1, n_models=3, patience=1, logger=None):
 
     # -----------------------------
     # Paths
@@ -34,6 +34,7 @@ def main(filePaths=None, epochs=1, n_models=3, logger=None):
     _TrainEnsemble(
         n_models=n_models,
         epochs=epochs,
+        patience=patience,
         train_loader=trainLoader,
         val_loader=valLoader,
         config=config,
