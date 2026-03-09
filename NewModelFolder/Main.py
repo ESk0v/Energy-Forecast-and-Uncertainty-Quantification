@@ -37,11 +37,12 @@ def getModelPath(model_dir):
 
     os.makedirs(model_dir, exist_ok=True)
 
-    existing = [f for f in os.listdir(model_dir) if f.startswith("model_v") and f.endswith(".pth")]
+    existing = [f for f in os.listdir(model_dir) if f.startswith("model_v")]
+    print(f"Existing model files in {model_dir}: {existing}")
     existing_versions = []
     for f in existing:
         try:
-            v = int(f.replace("model_v", "").replace(".pth", ""))
+            v = int(f.replace("model_v", ""))
             existing_versions.append(v)
         except ValueError:
             pass

@@ -32,9 +32,6 @@ def main(local = False, filePaths = None, logger=None):
     demand_mean = df['abvaerk'].mean()
     demand_std = df['abvaerk'].std()
 
-    print(f"Demand mean: {demand_mean:.4f}")
-    print(f"Demand std:  {demand_std:.4f}")
-
     df['abvaerk'] = (df['abvaerk'] - demand_mean) / demand_std
 
     # -----------------------------
