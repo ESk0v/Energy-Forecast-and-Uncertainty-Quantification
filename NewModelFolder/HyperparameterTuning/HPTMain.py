@@ -16,6 +16,10 @@ def hptmain(n_trials, epochs, local, filePaths, logger=None):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Hyperparameter tuning is running on device: {device}")
     
+    # Enable cudnn benchmarking for faster training if on GPU
+    if device == "cuda":
+        torch.backends.cudnn.benchmark = True
+        logger.info("✓ Enabled cudnn.benchmark for faster GPU training")
     
     # Load dataset
     train_dataset, val_dataset, _ = load_dataset(local, filePaths, logger)

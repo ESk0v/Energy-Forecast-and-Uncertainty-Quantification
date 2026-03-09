@@ -1,0 +1,42 @@
+2026-03-09 12:26:19 | INFO     | Main                  - [37mLogger initialized. Logging to: logs/Pipeline_20260309_122619.log[0m
+2026-03-09 12:26:19 | INFO     | LSTM                  - [37mLogger initialized. Logging to: logs/Pipeline_20260309_122619.log[0m
+2026-03-09 12:26:19 | INFO     | Ensemble              - [37mLogger initialized. Logging to: logs/Pipeline_20260309_122619.log[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mLogger initialized. Logging to: logs/Pipeline_20260309_122619.log[0m
+2026-03-09 12:26:19 | INFO     | Dataset               - [37mLogger initialized. Logging to: logs/Pipeline_20260309_122619.log[0m
+2026-03-09 12:26:19 | INFO     | Dataset               - [37mChecking dataset existence...[0m
+2026-03-09 12:26:19 | INFO     | Dataset               - [37mDataset exists[0m
+2026-03-09 12:26:19 | INFO     | Main                  - [37mCurrent config:
+                                                             [1mbatch size      :[0m[37m 6000
+                                                             [1mdecoder features:[0m[37m 11
+                                                             [1mdevice          :[0m[37m cpu
+                                                             [1mdropout         :[0m[37m 0.2
+                                                             [1mencoder features:[0m[37m 8
+                                                             [1mencoder history :[0m[37m 168
+                                                             [1mepochs          :[0m[37m 1
+                                                             [1mforecast length :[0m[37m 168
+                                                             [1mhidden size     :[0m[37m 128
+                                                             [1mlearning rate   :[0m[37m 0.001
+                                                             [1mnumber of layers:[0m[37m 2
+                                                             [1moutput size     :[0m[37m 1
+[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mStarting hyperparameter tuning...[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mHyperparameter tuning is running on device: cpu[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mDataset loaded[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mDataset split into [1m(train | val | test)[0m[37m with sizes: [1m(13766 | 1720 | 1720)[0m[37m[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mRunning hyperparameter search with 1 trials...[0m
+2026-03-09 12:26:19 | INFO     | Hyperparameter Tuning - [37mTrial 0 starting with hyperparameters:
+                                                             [1mhidden size     :[0m[37m 128
+                                                             [1mnumber of layers:[0m[37m 4
+                                                             [1mdropout         :[0m[37m 0.392798
+                                                             [1mbatch size      :[0m[37m 32
+                                                             [1mlearning rate   :[0m[37m 0.005399[0m
+2026-03-09 12:29:09 | SUCCESS  | Hyperparameter Tuning - [32mTrial 0 completed with validation loss: 35.715293 | Current best: Trial 0 with loss 35.715293[0m
+2026-03-09 12:29:09 | INFO     | Hyperparameter Tuning - [37mHyperparameter tuning evaluation[0m
+2026-03-09 12:29:09 | INFO     | Hyperparameter Tuning - [37mBest trial: Validation Loss: 35.715293[0m
+2026-03-09 12:29:09 | INFO     | Hyperparameter Tuning - [37mBest hyperparameters:
+                                                             hidden size: 128
+                                                             number of layers: 4
+                                                             dropout: 0.392798
+                                                             batch size: 32
+                                                             learning rate: 0.005399[0m
+2026-03-09 12:29:09 | SUCCESS  | Hyperparameter Tuning - [32mHyperparameter Tuning complete![0m

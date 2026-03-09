@@ -1,0 +1,28 @@
+2026-03-09 12:16:22 | INFO     | Main                  - [37mLogger initialized. Logging to: logs/Pipeline_20260309_121622.log[0m
+2026-03-09 12:16:22 | INFO     | LSTM                  - [37mLogger initialized. Logging to: logs/Pipeline_20260309_121622.log[0m
+2026-03-09 12:16:22 | INFO     | Ensemble              - [37mLogger initialized. Logging to: logs/Pipeline_20260309_121622.log[0m
+2026-03-09 12:16:22 | INFO     | Hyperparameter Tuning - [37mLogger initialized. Logging to: logs/Pipeline_20260309_121622.log[0m
+2026-03-09 12:16:22 | INFO     | Dataset               - [37mLogger initialized. Logging to: logs/Pipeline_20260309_121622.log[0m
+2026-03-09 12:16:22 | INFO     | Dataset               - [37mChecking dataset existence...[0m
+2026-03-09 12:16:22 | INFO     | Dataset               - [37mDataset exists[0m
+2026-03-09 12:16:22 | INFO     | Hyperparameter Tuning - [37mStarting hyperparameter tuning...[0m
+2026-03-09 12:16:22 | INFO     | Hyperparameter Tuning - [37mHyperparameter tuning is running on device: cpu[0m
+2026-03-09 12:16:23 | INFO     | Hyperparameter Tuning - [37mDataset loaded[0m
+2026-03-09 12:16:23 | INFO     | Hyperparameter Tuning - [37mDataset split into [1m(train | val | test)[0m[37m with sizes: [1m(13766 | 1720 | 1720)[0m[37m[0m
+2026-03-09 12:16:23 | INFO     | Hyperparameter Tuning - [37mRunning hyperparameter search with 1 trials...[0m
+2026-03-09 12:16:23 | INFO     | Hyperparameter Tuning - [37mTrial 0 starting with hyperparameters:
+                                                             [1mhidden size     :[0m[37m 128
+                                                             [1mnumber of layers:[0m[37m 4
+                                                             [1mdropout         :[0m[37m 0.392798
+                                                             [1mbatch size      :[0m[37m 8
+                                                             [1mlearning rate   :[0m[37m 0.005399[0m
+2026-03-09 12:22:26 | SUCCESS  | Hyperparameter Tuning - [32mTrial 0 completed with validation loss: 51.519872 | Current best: Trial 0 with loss 51.519872[0m
+2026-03-09 12:22:26 | INFO     | Hyperparameter Tuning - [37mHyperparameter tuning evaluation[0m
+2026-03-09 12:22:26 | INFO     | Hyperparameter Tuning - [37mBest trial: Validation Loss: 51.519872[0m
+2026-03-09 12:22:26 | INFO     | Hyperparameter Tuning - [37mBest hyperparameters:
+                                                             hidden size: 128
+                                                             number of layers: 4
+                                                             dropout: 0.392798
+                                                             batch size: 8
+                                                             learning rate: 0.005399[0m
+2026-03-09 12:22:26 | SUCCESS  | Hyperparameter Tuning - [32mHyperparameter Tuning complete![0m

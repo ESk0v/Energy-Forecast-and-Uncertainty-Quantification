@@ -2,11 +2,15 @@ import torch
 import torch.nn as nn
 import json
 import os
+import Logger
 
 # -----------------------------
 # CONFIG
 # -----------------------------
+_config_printed = False
+
 class Config:
+
     # Default hyperparameters
     encoder_history = 168
     forecast_length = 168
@@ -24,8 +28,8 @@ class Config:
     tuned_config_path = "NewModelFolder/Files/HPTTuning.json"
 
     @classmethod
-    def load_from_file(cls, path=None):
-        path = path or cls.tuned_config_path
+    def load_from_file(cls):
+        path = cls.tuned_config_path
         if os.path.exists(path):
             with open(path, "r") as f:
                 params = json.load(f)
@@ -35,17 +39,24 @@ class Config:
                 else:
                     print(f"Warning: unknown config key '{key}' in JSON, skipping")
 
+    
     @classmethod
-    def auto_load(cls):
-        cls.load_from_file(cls.tuned_config_path)
-        print("\n=== Current Config ===")
+    def print_config(cls, logger=None):
         # Print all class attributes that are hyperparameters
-        for key in dir(cls):
-            # Skip private/dunder attributes and methods
-            if key.startswith("_") or callable(getattr(cls, key)):
-                continue
-            print(f"{key}: {getattr(cls, key)}")
-        print("====================\n")
+        logger.info(f"Current config:\n"
+        f"                                                             \033[1mbatch size      :\033[0m\033[37m {cls.batch_size}\n"
+        f"                                                             \033[1mdecoder features:\033[0m\033[37m {cls.decoder_features}\n"
+        f"                                                             \033[1mdevice          :\033[0m\033[37m {cls.device}\n"
+        f"                                                             \033[1mdropout         :\033[0m\033[37m {cls.dropout}\n"
+        f"                                                             \033[1mencoder features:\033[0m\033[37m {cls.encoder_features}\n"
+        f"                                                             \033[1mencoder history :\033[0m\033[37m {cls.encoder_history}\n"
+        f"                                                             \033[1mepochs          :\033[0m\033[37m {cls.epochs}\n"
+        f"                                                             \033[1mforecast length :\033[0m\033[37m {cls.forecast_length}\n"
+        f"                                                             \033[1mhidden size     :\033[0m\033[37m {cls.hidden_size}\n"
+        f"                                                             \033[1mlearning rate   :\033[0m\033[37m {cls.learning_rate}\n"
+        f"                                                             \033[1mnumber of layers:\033[0m\033[37m {cls.num_layers}\n"
+        f"                                                             \033[1moutput size     :\033[0m\033[37m {cls.output_size}\n")
+
 
 # -----------------------------
 # MODEL
@@ -184,4 +195,4 @@ class LSTMForecast(nn.Module):
 
         return mu, log_var
 
-Config.auto_load()
+Config.load_from_file()

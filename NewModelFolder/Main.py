@@ -6,6 +6,7 @@ from HyperparameterTuning.HPTMain import hptmain
 from LSTM.LSTMMain import LSTMMain as train_model
 from Ensemble.EnsembleMain import main as EnsembleModel
 from Logger import setup_logger
+from LSTMModel import Config
 
 # ==========================================================
 # CONFIG
@@ -82,7 +83,6 @@ def RunTuning(local=False, n_trials=50, epochs=1, logger=None):
     ]
     #Check if the dataset exist
     logger.info("Starting hyperparameter tuning...")
-
     #Run the HyperparameterTuning
     study = hptmain(
         n_trials=n_trials,
@@ -171,6 +171,8 @@ def Main():
     datasetLogger = setup_logger("Dataset", local=args.local)
 
     ensure_dataset_exists(local=args.local, logger=datasetLogger)
+
+    Config.print_config(mainLogger)
 
     if args.mode == "tune":
         RunTuning(
