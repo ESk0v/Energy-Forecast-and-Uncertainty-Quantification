@@ -6,12 +6,13 @@ import os
 import optuna
 from optuna.trial import Trial
 import sys
+import logging
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from LSTMModel import Config, LSTMForecast
 
 
 def train_model(config, train_loader, val_loader, train_size, val_size, device, 
-                trial=None, max_epochs=None, patience=None):
+                trial=None, max_epochs=None, patience=None, logger=None):
 
     model = LSTMForecast(config).to(device)
     criterion = nn.MSELoss()
@@ -93,6 +94,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= patience:
+                logger.info(f"Early stopping triggered at epoch {epoch}")
                 break
     
     # Load best model
@@ -102,7 +104,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size, device,
     return best_val_loss, model
 
 def trialSuggestions(trial: Trial, patience=None, train_dataset=None, val_dataset=None, device=None, 
-              local=False, logger=None):
+              local=False, logger=None, epoch=None):
     
     # Create config with suggested hyperparameters
     config = Config()
@@ -150,7 +152,7 @@ def trialSuggestions(trial: Trial, patience=None, train_dataset=None, val_datase
         # Train model with early stopping
         best_val_loss, _ = train_model(
             config, train_loader, val_loader, train_size, val_size, 
-            device, trial=trial, max_epochs=1, patience=patience
+            device, trial=trial, max_epochs=epoch, patience=patience, logger=logger
         )
         
         return best_val_loss
