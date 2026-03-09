@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from GenerateREADME import generate_ensemble_readme
 
 
-def _EvaluateModel(test_loader, models, demand_mean, demand_std, device, n_models, plot_dir):
+def _EvaluateModel(test_loader, models, device, demand_mean, demand_std, n_models, plot_dir):
     """
     Runs ensemble evaluation with:
     - Mean prediction
@@ -22,6 +22,11 @@ def _EvaluateModel(test_loader, models, demand_mean, demand_std, device, n_model
     Only targets are rescaled back to original units (MW),
     since predictions are already in MW.
     """
+
+    print(f"{type(demand_mean)}, {type(demand_std)}")
+    # Convert to type float32 tensors for consistent calculations
+    #demand_std = torch.as_tensor(demand_std, dtype=torch.float32)
+    print(f"demand_mean: {demand_mean:.4f} ({type(demand_mean)}), demand_std: {demand_std:.4f} ({type(demand_std)})")
 
     meanPredictions = []
     stdPredictions = []

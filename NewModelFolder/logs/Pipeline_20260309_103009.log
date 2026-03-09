@@ -1,0 +1,9 @@
+2026-03-09 10:30:09 | INFO     | Main                  - [37mLogger initialized. Logging to: logs/Pipeline_20260309_103009.log[0m
+2026-03-09 10:30:09 | INFO     | LSTM                  - [37mLogger initialized. Logging to: logs/Pipeline_20260309_103009.log[0m
+2026-03-09 10:30:09 | INFO     | Ensemble              - [37mLogger initialized. Logging to: logs/Pipeline_20260309_103009.log[0m
+2026-03-09 10:30:09 | INFO     | Hyperparameter Tuning - [37mLogger initialized. Logging to: logs/Pipeline_20260309_103009.log[0m
+2026-03-09 10:30:09 | INFO     | Dataset               - [37mLogger initialized. Logging to: logs/Pipeline_20260309_103009.log[0m
+2026-03-09 10:30:09 | INFO     | Dataset               - [37mChecking dataset existence...[0m
+2026-03-09 10:30:09 | INFO     | Dataset               - [37mDataset exists[0m
+2026-03-09 10:30:09 | INFO     | Ensemble              - [37mStarting ensemble...[0m
+2026-03-09 10:30:09 | INFO     | Ensemble              - [37mTraining ensemble model 1/2 with seed 1000[0m
