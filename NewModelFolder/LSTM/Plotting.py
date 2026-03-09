@@ -190,7 +190,7 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
             and min(all_losses) > 0
             and max(all_losses) / min(all_losses) > 10):
         ax.set_yscale('log')
-        ax.set_ylabel("GaussianNLL Loss (log scale)", fontsize=12)
+        ax.set_ylabel("Normalized Gaussian NLL Loss (log scale)", fontsize=12)
 
     plt.tight_layout()
     plt.savefig(train_val_plot_path, dpi=150)
@@ -438,18 +438,3 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
                                train_size, val_size, test_size, n_total,
                                model_filename="../model.pth")
     print(f"  Saved: {os.path.join(plot_dir, 'README_Evaluation.md')}")
-
-
-
-# Allow standalone execution: python3 Plotting.py --local
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--local', action='store_true')
-    args = parser.parse_args()
-
-    _base = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    _model_dir = os.path.join(_base, "Models")
-    _model_path = _find_latest_model(_model_dir)
-    main(model_save_path=_model_path)
-
