@@ -3,9 +3,9 @@ import sys
 import pathlib
 import numpy as np
 
-# Add MachineLearningModel directory to path for imports
+# Add LSTMModel directory to path for imports
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
-sys.path.append(str(SCRIPT_DIR.parent / 'MachineLearningModel'))
+sys.path.append(str(SCRIPT_DIR.parent / 'LSTMModel'))
 
 from EvaluateModel import (
     residuals_plot,
@@ -14,8 +14,8 @@ from EvaluateModel import (
 )
 
 # Paths
-DATASET_PATH = SCRIPT_DIR.parent / 'Files' / 'dataset.json'
-PLOTS_DIR    = SCRIPT_DIR.parent / 'Files' / 'BaselinePlots'
+DATASET_PATH = SCRIPT_DIR / 'Files' / 'dataset.json'
+PLOTS_DIR    = SCRIPT_DIR / 'BaselinePlots'
 
 # --- Output toggles ---
 SAVE_PLOTS   = True

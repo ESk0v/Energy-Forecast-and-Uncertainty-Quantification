@@ -1,4 +1,3 @@
-import os
 import pathlib
 from matplotlib import pyplot as plt
 import torch
@@ -10,9 +9,9 @@ from Data import load_dataset
 
 # Paths relative to this script
 
-SCRIPT_DIR = pathlib.Path(__file__).resolve().parent.parent
-MODEL_PATH = SCRIPT_DIR / 'Files' / 'LSTMModels' / 'lstm_model.pth'
-DATASET_PATH = SCRIPT_DIR / 'Files' / 'dataset.json'
+SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+MODEL_PATH = SCRIPT_DIR / 'LSTMModels' / 'lstm_model.pth'
+DATASET_PATH = SCRIPT_DIR / 'Files' / 'RingkøbingData.csv'
 
 # =============================================================================
 # Main plotting functions

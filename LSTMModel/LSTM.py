@@ -21,10 +21,10 @@ from EvaluateModel import (
 # =============================================================================
 
 # --- Paths ---
-SCRIPT_DIR   = pathlib.Path(__file__).resolve().parent.parent
-DATASET_PATH = SCRIPT_DIR / 'Files' / 'dataset.json'
-MODEL_PATH   = SCRIPT_DIR / 'Files' / 'LSTMModels' / 'lstm_model.pth'
-PLOTS_DIR    = SCRIPT_DIR / 'Files' / 'TrainingPlots'
+SCRIPT_DIR   = pathlib.Path(__file__).resolve().parent
+DATASET_PATH = SCRIPT_DIR / 'Files' / 'RingkøbingData.csv'
+MODEL_PATH   = SCRIPT_DIR / 'LSTMModels' / 'lstm_model.pth'
+PLOTS_DIR    = SCRIPT_DIR / 'TrainingPlots'
 
 # --- Reproducibility ---
 RANDOM_SEED  = 6180
@@ -36,7 +36,7 @@ VAL_SPLIT    = 0.50   # fraction of the above that becomes val (rest is test)
                       # result: 70% train | 15% val | 15% test
 # --- Training ---
 BATCH_SIZE   = 32
-EPOCHS       = 50000
+EPOCHS       = 2
 LEARNING_RATE = 0.112202
 
 # --- Model ---

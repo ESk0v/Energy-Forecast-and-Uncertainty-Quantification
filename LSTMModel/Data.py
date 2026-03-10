@@ -1,6 +1,5 @@
-import json
-import pathlib
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
@@ -20,18 +19,39 @@ class ForecastDataset(Dataset):
 
 def load_dataset(filepath, verbose=True):
     """
-    Load, validate, and clean the dataset from a JSON file.
+    Load, validate, and clean the dataset from a CSV file.
+
+    The CSV is expected to contain:
+      - 'dateTime'                                  : timestamp (not used as a feature)
+      - 'abvaerk'                                   : target column (energy in MWh)
+      - 'cloudCover_0'       .. 'cloudCover_167'    : 168-hour weather forecast
+      - 'precipitation_0'    .. 'precipitation_167' : 168-hour weather forecast
+      - 'relativeHumidity_0' .. 'relativeHumidity_167'
+      - 'temperature_0'      .. 'temperature_167'
+      - 'windSpeed_0'        .. 'windSpeed_167'
+
+    Each row becomes one sample. The five forecast groups are stacked so that
+    samples has shape (n_samples, 168, 5) — seq_len=168, n_features=5.
 
     Returns:
-        samples  : np.ndarray of shape (n_samples, seq_len, n_features)
+        samples  : np.ndarray of shape (n_samples, 168, 5)
         targets  : np.ndarray of shape (n_samples,)
-        metadata : dict with feature names, counts, etc.
+        metadata : dict with 'feature_names', 'n_features', 'n_samples'
     """
-    with open(filepath, 'r') as f:
-        data = json.load(f)
+    df = pd.read_csv(filepath)
 
-    samples = np.array(data['samples'], dtype=np.float32)
-    targets = np.array(data['targets'], dtype=np.float32)
+    SEQ_LEN = 168
+    feature_groups = ['cloudCover', 'precipitation', 'relativeHumidity', 'temperature', 'windSpeed']
+
+    # Build (n_samples, 168, 5) by stacking each weather-variable group
+    feature_arrays = []
+    for group in feature_groups:
+        cols = [f"{group}_{i}" for i in range(SEQ_LEN)]
+        feature_arrays.append(df[cols].values)  # (n_samples, 168)
+
+    # Stack along last axis → (n_samples, 168, 5)
+    samples = np.stack(feature_arrays, axis=2).astype(np.float32)
+    targets = df['abvaerk'].values.astype(np.float32)
 
     if verbose:
         # --- Data quality report ---
@@ -52,15 +72,21 @@ def load_dataset(filepath, verbose=True):
     samples = samples[valid_mask]
     targets = targets[valid_mask]
 
+    metadata = {
+        'feature_names': feature_groups,
+        'n_features'   : len(feature_groups),
+        'n_samples'    : len(targets),
+    }
+
     if verbose:
         # --- Summary ---
         print(f"\nLoaded dataset:")
         print(f"  Samples shape : {samples.shape}")
         print(f"  Targets shape : {targets.shape}")
-        print(f"  Features      : {data['feature_names']}")
+        print(f"  Features      : {metadata['feature_names']}")
         print(f"  Removed       : {(~valid_mask).sum()} invalid samples")
 
-    return samples, targets, data
+    return samples, targets, metadata
 
 
 def normalize_data(X_train, X_val, y_train, y_val):
@@ -77,14 +103,7 @@ def normalize_data(X_train, X_val, y_train, y_val):
     n_train, seq_len, n_features = X_train.shape
     n_val = X_val.shape[0]
 
-    # Flatten time dimension for sklearn, then restore shape after scaling
-    X_train_scaled = (
-        StandardScaler()
-        .fit(X_train.reshape(-1, n_features))
-        .transform(X_train.reshape(-1, n_features))
-        .reshape(n_train, seq_len, n_features)
-    )
-
+    # Fit scalers on training data only, then apply to both splits
     feature_scaler = StandardScaler().fit(X_train.reshape(-1, n_features))
     X_train_scaled = feature_scaler.transform(X_train.reshape(-1, n_features)).reshape(n_train, seq_len, n_features)
     X_val_scaled   = feature_scaler.transform(X_val.reshape(-1, n_features)).reshape(n_val, seq_len, n_features)
