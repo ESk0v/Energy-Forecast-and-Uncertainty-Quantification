@@ -13,8 +13,6 @@ def LSTMMain(filePaths=None, epochs=1, patience=5, logger=None):
     # Paths
     dataset_path    = filePaths[0]
     model_save_path = filePaths[1]
-
-    # run_dir is the folder containing the .pth file
     run_dir = os.path.dirname(model_save_path)
     os.makedirs(run_dir, exist_ok=True)
 
@@ -30,11 +28,31 @@ def LSTMMain(filePaths=None, epochs=1, patience=5, logger=None):
     # Create config and data loaders
     config = Config()
     config.epochs = epochs
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False)
 
-    # Train model
-    torch.cuda.empty_cache()
+    num_workers = min(4, os.cpu_count())  # use 4 or as many CPUs as available
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=config.batch_size, 
+        shuffle=True,
+        pin_memory=(device =='cuda'), 
+        num_workers=num_workers, 
+        persistent_workers=False
+    )
+
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=config.batch_size, 
+        shuffle=False,
+        pin_memory=(device =='cuda'), 
+        num_workers=num_workers, 
+        persistent_workers=False
+    )
+
+    if device == "cuda":
+        torch.cuda.empty_cache()
+
     best_val_loss, train_losses, val_losses = train_model(
         config, train_loader, val_loader, train_size, val_size,
         model_save_path, logger, patience=patience
@@ -65,5 +83,3 @@ def LSTMMain(filePaths=None, epochs=1, patience=5, logger=None):
     )
 
     logger.success("Training README successfully generated")
-
-
