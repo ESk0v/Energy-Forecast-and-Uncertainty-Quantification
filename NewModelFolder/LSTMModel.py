@@ -19,7 +19,7 @@ class Config:
     num_layers = 2
     dropout = 0.2
     epochs = 1
-    batch_size = 6000
+    batch_size = 32
     learning_rate = 1e-3
     device = "cuda" if torch.cuda.is_available() else "cpu"
     output_size = 1
