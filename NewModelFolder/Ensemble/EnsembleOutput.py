@@ -126,17 +126,10 @@ def _GeneratePlots(
     generated.append(_PlotWeekForecast(time_steps, targets_week, mean_preds_week, std_preds_week, epistemic_week, aleatoric_week, week_index, plot_dir))
     generated.append(_PlotCalibration(meanPredictions, stdPredictions, targets, plot_dir))
     generated.append(_PlotSigmaCoverage(meanPredictions, stdPredictions, targets, plot_dir))
-    generated.append(_PlotUncertaintyDecomposition(
-    time_steps,
-    epistemic_week,
-    aleatoric_week,
-    plot_dir
-    ))
-
-    generated.append(_PlotErrorVsUncertainty(meanPredictions, stdPredictions, targets, plot_dir))
+    generated.append(_PlotUncertaintyDecomposition(time_steps, epistemic_week, aleatoric_week, plot_dir))
     generated.append(_PlotBinnedErrorVsUncertainty(meanPredictions, stdPredictions, targets, plot_dir))
-    generated.append(_PlotStandardizedResiduals(meanPredictions, stdPredictions, targets, plot_dir))
-    generated.append(_PlotUncertaintyHistogram(stdPredictions, plot_dir))
+    #generated.append(_PlotStandardizedResiduals(meanPredictions, stdPredictions, targets, plot_dir))
+    #generated.append(_PlotUncertaintyHistogram(stdPredictions, plot_dir))
     return [f for f in generated if f is not None]
 
 # ============================================================
