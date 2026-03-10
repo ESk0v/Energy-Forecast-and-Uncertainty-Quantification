@@ -9,7 +9,7 @@ from LSTM.Plotting import main as generate_plots
 from LSTM.LSTMTraining import load_and_split_dataset, train_model
 from LSTM.GenerateREADME import generate_training_readme
 
-def LSTMMain(filePaths=None, epochs=1, patience=None, logger=None):
+def LSTMMain(filePaths=None, epochs=1, patience=5, logger=None):
     # Paths
     dataset_path    = filePaths[0]
     model_save_path = filePaths[1]
@@ -42,7 +42,6 @@ def LSTMMain(filePaths=None, epochs=1, patience=None, logger=None):
 
     # Load checkpoint for metadata
     checkpoint = torch.load(model_save_path, weights_only=False)
-    patience = patience
     logger.success("LSTM training completed successfully!")
     logger.info("Generating plots...")
 

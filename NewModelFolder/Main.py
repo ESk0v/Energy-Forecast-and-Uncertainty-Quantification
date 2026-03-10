@@ -76,7 +76,7 @@ def ensure_dataset_exists(local=False, logger=None):
 
     logger.info("Dataset exists")
 
-def RunTuning(local=False, n_trials=50, epochs=1, tune_patience=1, logger=None):
+def RunTuning(local=False, n_trials=50, epochs=1, tune_patience=5, logger=None):
     #Start the Tuning part
 
     filePaths = [
@@ -97,7 +97,7 @@ def RunTuning(local=False, n_trials=50, epochs=1, tune_patience=1, logger=None):
 
     logger.success("Hyperparameter Tuning complete!")
 
-def RunLstm(local=False, epochs=1, train_patience=1, logger=None):
+def RunLstm(local=False, epochs=1, train_patience=5, logger=None):
     logger.info("Starting LSTM training...")
     
     modelPath, version = getModelPath(LOCAL_MODELDIR_PATH if local else SERVER_MODELDIR_PATH)
@@ -110,7 +110,7 @@ def RunLstm(local=False, epochs=1, train_patience=1, logger=None):
     train_model(filePaths=filePaths, epochs=epochs, patience=train_patience, logger=logger)
     logger.success("Finished LSTM plotting")
 
-def RunEnsemble(local=False, epochs=1, n_models=3, ensemble_patience=1, logger=None):
+def RunEnsemble(local=False, epochs=1, n_models=3, ensemble_patience=5, logger=None):
     logger.info("Starting ensemble...")
 
     # Always find the latest model_vN/ folder automatically
@@ -162,12 +162,12 @@ def Main():
     parser.add_argument("--train_epochs", type=int, default=1, help="Number of epochs for training")
     # --ensemble_epochs <int> → number of epochs to train each ensemble model (default: 1)
     parser.add_argument("--ensemble_epochs", type=int, default=1, help="Number of epochs for ensemble training")
-    # --tune_patience <int> → early stopping patience (in epochs) used during hyperparameter tuning (default: 1)
-    parser.add_argument("--tune_patience", type=int, default=1, help="Early-stopping patience (epochs) during tuning")
-    # --train_patience <int> → early stopping patience (in epochs) used during final LSTM training (default: 1)
-    parser.add_argument("--train_patience", type=int, default=1, help="Early-stopping patience (epochs) during training")
-    # --ensemble_patience <int> → early stopping patience (in epochs) used when training ensemble members (default: 1)
-    parser.add_argument("--ensemble_patience", type=int, default=1, help="Early-stopping patience (epochs) during ensemble training")
+    # --tune_patience <int> → early stopping patience (in epochs) used during hyperparameter tuning (default: 5)
+    parser.add_argument("--tune_patience", type=int, default=5, help="Early-stopping patience (epochs) during tuning")
+    # --train_patience <int> → early stopping patience (in epochs) used during final LSTM training (default: 10)
+    parser.add_argument("--train_patience", type=int, default=5, help="Early-stopping patience (epochs) during training")
+    # --ensemble_patience <int> → early stopping patience (in epochs) used when training ensemble members (default: 5)
+    parser.add_argument("--ensemble_patience", type=int, default=5, help="Early-stopping patience (epochs) during ensemble training")
 
     args = parser.parse_args()
 
