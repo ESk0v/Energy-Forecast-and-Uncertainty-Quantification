@@ -33,12 +33,14 @@ def hptmain(n_trials, epochs, patience, local, filePaths, logger=None):
         sampler=optuna.samplers.TPESampler(seed=42)
     )
     
-    logger.info(f"Running hyperparameter search with {n_trials} trials...")    
+    logger.info(f"Running hyperparameter search with {n_trials} trials and {epochs} epochs per trial... ")    
 
     # Run trials one by one and log after each
+    num_workers = min(4, os.cpu_count())  # use 4 or as many CPUs as available
+    logger.debug(f"Using num_workers={num_workers} for DataLoader")
     for i in range(n_trials):
         study.optimize(
-            lambda trial: trialSuggestions(trial, patience, train_dataset, val_dataset, device, local, logger),
+            lambda trial: trialSuggestions(trial, patience, train_dataset, val_dataset, device, local, logger, epoch=epochs, workers=num_workers),
             n_trials=1
         ) 
 
