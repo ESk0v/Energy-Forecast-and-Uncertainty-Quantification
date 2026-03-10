@@ -79,7 +79,7 @@ def save_checkpoint(model, optimizer, config, epoch, val_loss, train_losses, val
 
 
 def train_model(config, train_loader, val_loader, train_size, val_size,
-                model_save_path, logger=None, patience=None):
+                model_save_path, logger=None, patience=5):
 
     # Model, Loss, Optimizer
     model = LSTMForecast(config).to(config.device)
@@ -90,6 +90,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     # Early stopping
     patience = patience
     best_val_loss = np.inf
+    best_epoch = 0
     epochs_no_improve = 0
 
     train_losses, val_losses = [], []
