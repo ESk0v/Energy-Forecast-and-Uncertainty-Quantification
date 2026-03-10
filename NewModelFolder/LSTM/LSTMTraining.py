@@ -37,8 +37,9 @@ def train_epoch(model, train_loader, optimizer, criterion, device, train_size):
     for enc, dec, tgt in train_loader:
         enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
         optimizer.zero_grad()
-        output, var = model(enc, dec)
-        loss = criterion(output, tgt, torch.exp(var))
+        output, _ = model(enc, dec)
+        variance = torch.ones_like(output, device=device)
+        loss = criterion(output, tgt, variance)
         loss.backward()
         # Gradient clipping to prevent gradient explosion with 168-step sequences
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -56,8 +57,9 @@ def validate_epoch(model, val_loader, criterion, device, val_size):
     with torch.no_grad():
         for enc, dec, tgt in val_loader:
             enc, dec, tgt = enc.to(device), dec.to(device), tgt.to(device)
-            output, var = model(enc, dec)
-            val_loss_epoch += criterion(output, tgt, torch.exp(var)).item() * enc.size(0)
+            output, _ = model(enc, dec)
+            variance = torch.ones_like(output, device=device)
+            val_loss_epoch += criterion(output, tgt, variance).item() * enc.size(0)
 
     val_loss = val_loss_epoch / val_size
     return val_loss
@@ -82,7 +84,7 @@ def train_model(config, train_loader, val_loader, train_size, val_size,
     # Model, Loss, Optimizer
     model = LSTMForecast(config).to(config.device)
     criterion = nn.GaussianNLLLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
 
     # Early stopping
