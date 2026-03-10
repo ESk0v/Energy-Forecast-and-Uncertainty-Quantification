@@ -38,7 +38,6 @@ def getModelPath(model_dir):
     os.makedirs(model_dir, exist_ok=True)
 
     existing = [f for f in os.listdir(model_dir) if f.startswith("model_v")]
-    print(f"Existing model files in {model_dir}: {existing}")
     existing_versions = []
     for f in existing:
         try:

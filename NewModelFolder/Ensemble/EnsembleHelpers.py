@@ -75,7 +75,7 @@ def _EnsemblePredict(models, enc, dec, demand_mean, demand_std):
     mean_norm = mus.mean(dim=0)
 
     # Epistemic variance
-    epistemic_norm = mus.var(dim=0)
+    epistemic_norm = mus.var(dim=0, unbiased=False)
 
     # Aleatoric variance
     aleatoric_norm = vars_.mean(dim=0)
