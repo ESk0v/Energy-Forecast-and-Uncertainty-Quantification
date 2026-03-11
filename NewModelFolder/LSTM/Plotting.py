@@ -133,8 +133,8 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     # Rescale predictions & targets
     # -----------------------------
     if "demand_mean" in dataset and "demand_std" in dataset:
-        demand_mean = dataset["demand_mean"]
-        demand_std  = dataset["demand_std"]
+        demand_mean = float(dataset["demand_mean"])
+        demand_std  = float(dataset["demand_std"])
     else:
         all_targets = target_data.detach().cpu().numpy()
         demand_mean = float(all_targets.mean())
@@ -366,7 +366,9 @@ def main(train_losses=None, val_losses=None, filePaths=None, logger=None, run_di
     # Build persistence baseline: last value of encoder = encoder_data[:, -1, 0]
     # encoder feature index 0 is 'abvaerk' (see DatasetCreation.py)
     test_encoder = encoder_data[train_size + val_size:]        # (n_test, 168, 8)
-    last_known   = test_encoder[:, -1, 0].numpy()             # (n_test,)
+    last_known   = test_encoder[:, -1, 0].numpy()             # (n_test,)  — still normalized
+    # Rescale to raw MWh so it matches the already-rescaled targets_h / preds_h
+    last_known   = last_known * demand_std + demand_mean
     # Persistence prediction: repeat last known value for all 168 horizons
     persist_pred    = np.tile(last_known[:, None], (1, 168))  # (n_test, 168)
     persist_targets = targets_h
